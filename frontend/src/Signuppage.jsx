@@ -25,30 +25,62 @@ export default function SignupPage({ onNavigate, onLogin }) {
     strength
   ];
 
-  const handleSignup = () => {
-    setError("");
-    if (!name.trim()) {
-      setError("Please enter your full name.");
-      return;
-    }
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setError("Enter a valid email address.");
-      return;
-    }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-    if (password !== confirm) {
-      setError("Passwords do not match.");
-      return;
-    }
+  const handleSignup = async () => {
+  setError("");
+
+  if (!name.trim()) {
+    setError("Please enter your full name.");
+    return;
+  }
+
+  if (!/\S+@\S+\.\S+/.test(email)) {
+    setError("Enter a valid email address.");
+    return;
+  }
+
+  if (password.length < 6) {
+    setError("Password must be at least 6 characters.");
+    return;
+  }
+
+  if (password !== confirm) {
+    setError("Passwords do not match.");
+    return;
+  }
+
+  try {
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setStep(2);
-    }, 1400);
-  };
+
+    const response = await fetch("http://localhost:5000/api/auth/signup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Signup failed");
+    }
+
+    setLoading(false);
+    setStep(2);
+
+  } catch (err) {
+    setLoading(false);
+    setError(err.message);
+  }
+};
+
+  
+
+  
 
   if (step === 2) {
     return (
