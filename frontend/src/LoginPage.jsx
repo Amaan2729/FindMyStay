@@ -7,26 +7,42 @@ export default function LoginPage({ onNavigate, onLogin }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    setError("");
-    if (!email || !password) {
-      setError("Please fill in all fields.");
-      return;
-    }
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setError("Enter a valid email address.");
-      return;
-    }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-    setLoading(true);
-    setTimeout(() => {
+  const handleLogin = async () => {
+  setError("");
+
+  if (!email || !password) {
+    setError("Please fill in all fields.");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const response = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.message || "Login failed");
       setLoading(false);
-      onLogin({ name: email.split("@")[0], email });
-    }, 1200);
-  };
+      return;
+    }
+
+    setLoading(false);
+    onLogin(data.user);
+
+  } catch (error) {
+    console.error(error);
+    setError("Failed to connect to server");
+    setLoading(false);
+  }
+};
 
   return (
     <div
