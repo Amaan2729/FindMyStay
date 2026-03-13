@@ -2,22 +2,13 @@ import { useState, useMemo } from "react";
 
 const generateHotels = (destination) => {
   const types = ["Hotel", "Resort", "Motel", "Villa", "Homestay", "Hostel"];
+
   const amenitiesList = [
-    "Pool",
-    "Spa",
-    "WiFi",
-    "Restaurant",
-    "Gym",
-    "Bar",
-    "Parking",
-    "Beach Access",
-    "Mountain View",
-    "Fireplace",
-    "Trekking",
-    "Ayurveda",
-    "Heritage Tour",
-    "Room Service",
+    "Pool","Spa","WiFi","Restaurant","Gym","Bar","Parking",
+    "Beach Access","Mountain View","Fireplace","Trekking",
+    "Ayurveda","Heritage Tour","Room Service",
   ];
+
   const imgs = [
     "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=500&q=80",
     "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=500&q=80",
@@ -32,41 +23,24 @@ const generateHotels = (destination) => {
     "https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=500&q=80",
     "https://images.unsplash.com/photo-1549294413-26f195200c16?w=500&q=80",
   ];
-  const prefixes = [
-    "The",
-    "Grand",
-    "Royal",
-    "Luxury",
-    "Heritage",
-    "Serene",
-    "Golden",
-    "Elite",
-    "Paradise",
-    "Bliss",
-  ];
-  const suffixes = [
-    "Palace",
-    "Inn",
-    "Retreat",
-    "Suites",
-    "Lodge",
-    "Haveli",
-    "Residency",
-    "Enclave",
-    "Nest",
-    "Abode",
-  ];
+
+  const prefixes = ["The","Grand","Royal","Luxury","Heritage","Serene","Golden","Elite","Paradise","Bliss"];
+  const suffixes = ["Palace","Inn","Retreat","Suites","Lodge","Haveli","Residency","Enclave","Nest","Abode"];
 
   const seed = destination.charCodeAt(0);
+
   return Array.from({ length: 24 }, (_, i) => {
     const type = types[(seed + i) % types.length];
     const rating = (3.5 + ((seed * i * 7) % 15) / 10).toFixed(1);
     const price = 1200 + ((seed * (i + 1) * 137) % 18000);
     const reviews = 100 + ((seed * i * 53) % 3000);
+
     const amenCount = 3 + (i % 3);
+
     const amenities = amenitiesList
       .filter((_, ai) => (ai + i + seed) % 4 < amenCount)
       .slice(0, 4);
+
     return {
       id: i,
       name: `${prefixes[(seed + i * 3) % prefixes.length]} ${destination} ${suffixes[(seed + i) % suffixes.length]}`,
@@ -85,11 +59,15 @@ const StarRating = ({ rating }) => (
   <span style={{ color: "#f5a623", fontSize: "13px" }}>
     {"★".repeat(Math.floor(rating))}
     {rating % 1 >= 0.5 ? "½" : ""}
-    <span style={{ color: "#ddd" }}>{"★".repeat(5 - Math.ceil(rating))}</span>
+    <span style={{ color: "#ddd" }}>
+      {"★".repeat(5 - Math.ceil(rating))}
+    </span>
   </span>
 );
 
-export default function DestinationPage({ destination, destImg, onBack }) {
+export default function DestinationPage({ destination, destImg, onBack, onBook }) {
+
+  // ✅ FIXED ERROR (moved inside component)
   const allHotels = useMemo(() => generateHotels(destination), [destination]);
 
   const [typeFilter, setTypeFilter] = useState("All");
@@ -99,46 +77,47 @@ export default function DestinationPage({ destination, destImg, onBack }) {
   const [sortBy, setSortBy] = useState("popular");
   const [wishlist, setWishlist] = useState([]);
 
-  const types = [
-    "All",
-    "Hotel",
-    "Resort",
-    "Motel",
-    "Villa",
-    "Homestay",
-    "Hostel",
-  ];
+  const types = ["All","Hotel","Resort","Motel","Villa","Homestay","Hostel"];
 
   const filtered = useMemo(() => {
+
     let list = allHotels.filter((h) => {
+
       if (typeFilter !== "All" && h.type !== typeFilter) return false;
       if (h.rating < minRating) return false;
       if (h.price > maxPrice) return false;
       if (h.price < minPrice) return false;
+
       return true;
     });
+
     if (sortBy === "price_asc")
       list = [...list].sort((a, b) => a.price - b.price);
+
     else if (sortBy === "price_desc")
       list = [...list].sort((a, b) => b.price - a.price);
+
     else if (sortBy === "rating")
       list = [...list].sort((a, b) => b.rating - a.rating);
+
     return list;
+
   }, [allHotels, typeFilter, minRating, maxPrice, minPrice, sortBy]);
 
   const toggleWishlist = (id) =>
     setWishlist((w) =>
-      w.includes(id) ? w.filter((x) => x !== id) : [...w, id],
+      w.includes(id) ? w.filter((x) => x !== id) : [...w, id]
     );
 
   return (
-    <div
+      <div
       style={{
         fontFamily: "'Playfair Display', Georgia, serif",
         background: "#faf8f5",
         minHeight: "100vh",
       }}
     >
+    
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
         * { box-sizing: border-box; }
@@ -800,7 +779,12 @@ export default function DestinationPage({ destination, destImg, onBack }) {
                           /night
                         </span>
                       </div>
-                      <button className="dp-book-btn">Book Now</button>
+                     <button
+  className="dp-book-btn"
+  onClick={() => onBook(h)}
+>
+  Book Now
+</button>
                     </div>
                   </div>
                 </div>

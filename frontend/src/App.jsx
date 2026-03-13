@@ -4,6 +4,7 @@ import LoginPage from "./LoginPage";
 import SignupPage from "./Signuppage";
 import TripSquad from "./TripSquad";
 import TravelBot from "./Travelbot";
+import BookNow from "./BookNow";
 
 const destinations = [
   {
@@ -218,6 +219,7 @@ const StarRating = ({ rating }) => {
 export default function FindMyStay() {
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
+  const [selectedHotel, setSelectedHotel] = useState(null);
   const [destination, setDestination] = useState("");
   const [guests, setGuests] = useState("2 Adults");
   const [activeFilter, setActiveFilter] = useState("All");
@@ -230,6 +232,7 @@ export default function FindMyStay() {
   const [page, setPage] = useState("home"); // "home" | "login" | "signup"
   const [user, setUser] = useState(null);
   const destSectionRef = useRef(null);
+
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60);
@@ -293,7 +296,7 @@ export default function FindMyStay() {
     return <SignupPage onNavigate={setPage} onLogin={handleLogin} />;
   if (page === "tripsquad") return <TripSquad onBack={() => setPage("home")} />;
 
-  if (selectedDest) {
+ /* if (selectedDest) {
     return (
       <DestinationPage
         destination={selectedDest.name}
@@ -304,7 +307,30 @@ export default function FindMyStay() {
         }}
       />
     );
-  }
+  }*/
+
+    if (selectedHotel) {
+  return (
+    <BookNow
+      hotel={selectedHotel}
+      onBack={() => setSelectedHotel(null)}
+    />
+  );
+}
+
+if (selectedDest) {
+  return (
+    <DestinationPage
+      destination={selectedDest.name}
+      destImg={selectedDest.img}
+      onBack={() => {
+        setSelectedDest(null);
+        window.scrollTo(0, 0);
+      }}
+      onBook={(hotel) => setSelectedHotel(hotel)}
+    />
+  );
+}
 
   return (
     <div
