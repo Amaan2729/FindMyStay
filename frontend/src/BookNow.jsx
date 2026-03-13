@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { io } from "socket.io-client";
+const socket = io("http://localhost:5000"); // Socket connection
 
 // --- Sample hotel data for standalone demo ---
 const demoHotel = {
@@ -93,22 +95,17 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
     if (validate()) setStep(2);
   };
 
-  /*const handleConfirm = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setStep(3);
-    }, 1800);
-  };*/
+  
+  
+
 const handleConfirm = async () => {
   setLoading(true);
 
   try {
+    // Send booking to backend via API
     const res = await fetch("http://localhost:5000/api/book", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: form.name,
         email: form.email,
@@ -118,24 +115,51 @@ const handleConfirm = async () => {
         checkout: form.checkout,
         guests: form.guests,
         rooms: form.rooms,
-        total_price: total
-      })
+        total_price: total,
+      }),
     });
 
     const data = await res.json();
+    console.log("Backend Response:", data);
 
-    console.log(data);
+    // Emit new booking via Socket
+    socket.emit("newBooking", {
+      bookingId: data.bookingId || bookingId,
+      hotelName: hotel.name,
+      user: form.name,
+      total,
+    });
 
     setStep(3);
   } catch (err) {
     console.error("Booking error:", err);
     alert("Booking failed. Check backend.");
   } finally {
-    setLoading(false);   // ⭐ IMPORTANT
+    setLoading(false);
   }
 };
-  
 
+useEffect(() => {
+  // Confirm connection
+  socket.on("connect", () => {
+    console.log("Socket connected", socket.id);
+  });
+
+  // Listen for booking confirmation
+  socket.on("bookingConfirmed", (data) => {
+    alert(`🎉 Booking confirmed for ${data.hotelName}!\nGuest: ${data.user}\nTotal: ₹${data.total}`);
+  });
+
+  // Optional: listen for updates from other users
+  socket.on("bookingUpdate", (data) => {
+    alert(`🔔 Update: Booking at ${data.hotelName}`);
+  });
+
+  return () => {
+    socket.off("bookingConfirmed");
+    socket.off("bookingUpdate");
+  };
+}, []);
    
 
   const bookingId =
