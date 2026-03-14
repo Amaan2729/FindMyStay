@@ -5,6 +5,8 @@ import SignupPage from "./Signuppage";
 import TripSquad from "./TripSquad";
 import TravelBot from "./Travelbot";
 import BookNow from "./BookNow";
+import logo from "./assets/bd.png";
+
 
 const destinations = [
   {
@@ -610,9 +612,10 @@ if (selectedDest) {
           borderBottom: scrolled ? "1px solid rgba(255,255,255,0.07)" : "none",
         }}
       >
+     
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <img
-            src="/src/assets/logo.jpeg"
+            src={logo}
             alt="FindMyStay"
             style={{ height: "50px", width: "auto" }}
           />
@@ -2063,7 +2066,7 @@ if (selectedDest) {
                 }}
               >
                 <img
-                  src="/src/assets/logo.jpeg"
+                  src={logo}
                   alt="FindMyStay"
                   style={{ height: "45px", width: "auto" }}
                 />
