@@ -4,6 +4,10 @@ const { createServer } = require("http");
 const { Server } = require("socket.io");
 const sequelize = require("./config/db");
 
+const { graphqlHTTP } = require("express-graphql");
+const graphqlSchema = require("./graphql/schema");
+const graphqlRoot = require("./graphql/resolvers");
+
 const authRoutes = require("./routes/auth");
 const bookingRoutes = require("./routes/booking");
 
@@ -22,6 +26,15 @@ app.get("/", (req, res) => {
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api", bookingRoutes);
+
+app.use(
+  "/graphql",
+  graphqlHTTP({
+    schema: graphqlSchema,
+    rootValue: graphqlRoot,
+    graphiql: true, // Enables interactive UI
+  })
+);
 
 // ----- SOCKET.IO INTEGRATION -----
 const io = new Server(httpServer, {

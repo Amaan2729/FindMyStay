@@ -45,13 +45,15 @@ const destinations = [
   },
   {
     name: "Varanasi",
-    img: "https://images.unsplash.com/photo-1561361058-c24e02f9f2a5?w=400&q=80",
+   /* img: "https://images.unsplash.com/photo-1561361058-c24e02f9f2a5?w=400&q=80",*/
+    img: "https://cdn.britannica.com/00/189800-050-FCC9D047/Ghats-Varanasi-Ganges-River-India-Uttar-Pradesh.jpg",
     hotels: 560,
     desc: "Ancient ghats and spiritual Ganga Aarti.",
   },
   {
     name: "Rishikesh",
-    img: "https://images.unsplash.com/photo-1585136917228-5b8ec56de477?w=400&q=80",
+    /*img: "https://images.unsplash.com/photo-1585136917228-5b8ec56de477?w=400&q=80",*/
+    img: "https://images.unsplash.com/photo-1712510817140-917938f92e5b?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8cmlzaGlrZXNofGVufDB8fDB8fHww",
     hotels: 480,
     desc: "Yoga capital and river rafting hub.",
   },
@@ -94,6 +96,7 @@ const destinations = [
   {
     name: "Mysore",
     img: "https://images.unsplash.com/photo-1600100397608-ce32d09a5a18?w=400&q=80",
+    img: "https://plus.unsplash.com/premium_photo-1697729434815-40ab4970ebc1?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8bXlzb3JlfGVufDB8fDB8fHww",
     hotels: 520,
     desc: "Grand Mysore Palace and Dussehra festival.",
   },
