@@ -303,18 +303,7 @@ export default function FindMyStay() {
     return <SignupPage onNavigate={setPage} onLogin={handleLogin} />;
   if (page === "tripsquad") return <TripSquad onBack={() => setPage("home")} />;
 
- /* if (selectedDest) {
-    return (
-      <DestinationPage
-        destination={selectedDest.name}
-        destImg={selectedDest.img}
-        onBack={() => {
-          setSelectedDest(null);
-          window.scrollTo(0, 0);
-        }}
-      />
-    );
-  }*/
+ 
 
     if (selectedHotel) {
   return (
@@ -727,7 +716,9 @@ if (selectedDest) {
           style={{
             position: "absolute",
             inset: 0,
-            backgroundImage: `url('https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1600&q=60')`,
+           /* backgroundImage: `url('https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1600&q=60')`,*/
+           backgroundImage: `url('https://plus.unsplash.com/premium_photo-1661964071015-d97428970584?q=80&w=1320&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')`,
+
             backgroundSize: "cover",
             backgroundPosition: "center",
             opacity: 0.18,
