@@ -95,7 +95,7 @@ const destinations = [
   },
   {
     name: "Mysore",
-    img: "https://images.unsplash.com/photo-1600100397608-ce32d09a5a18?w=400&q=80",
+    /*img: "https://images.unsplash.com/photo-1600100397608-ce32d09a5a18?w=400&q=80",*/
     img: "https://plus.unsplash.com/premium_photo-1697729434815-40ab4970ebc1?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8bXlzb3JlfGVufDB8fDB8fHww",
     hotels: 520,
     desc: "Grand Mysore Palace and Dussehra festival.",
@@ -144,13 +144,15 @@ const destinations = [
   },
   {
     name: "Mount Abu",
-    img: "https://images.unsplash.com/photo-1553827230-c9b9d2e2ea15?w=400&q=80",
+   /* img: "https://images.unsplash.com/photo-1553827230-c9b9d2e2ea15?w=400&q=80",*/
+   img: "https://hldak.mmtcdn.com/prod-s3-hld-hpcmsadmin/holidays/images/cities/1224/Majestic%20Kumbhalgarh%20fort.jpg",
     hotels: 290,
     desc: "Rajasthan's only hill station.",
   },
   {
     name: "Kaziranga",
-    img: "https://images.unsplash.com/photo-1564349683136-77e08dba1ef3?w=400&q=80",
+    /*img: "https://images.unsplash.com/photo-1564349683136-77e08dba1ef3?w=400&q=80",*/
+    img: "https://images.pexels.com/photos/20262429/pexels-photo-20262429.jpeg",
     hotels: 180,
     desc: "One-horned rhinoceros wildlife sanctuary.",
   },
