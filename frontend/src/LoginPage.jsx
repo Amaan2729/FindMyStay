@@ -1,4 +1,5 @@
 import { useState } from "react";
+import logo from "./assets/bd.png";
 
 export default function LoginPage({ onNavigate, onLogin }) {
   const [email, setEmail] = useState("");
@@ -145,7 +146,7 @@ export default function LoginPage({ onNavigate, onLogin }) {
             onClick={() => onNavigate("home")}
           >
             <img
-              src="/src/assets/logo.jpeg"
+              src={logo}
               alt="FindMyStay"
               style={{ height: "70px", width: "auto" }}
             />
