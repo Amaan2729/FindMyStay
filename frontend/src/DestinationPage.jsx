@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import logo from "./assets/bd.png";
 
 const generateHotels = (destination) => {
   const types = ["Hotel", "Resort", "Motel", "Villa", "Homestay", "Hostel"];
@@ -67,7 +68,7 @@ const StarRating = ({ rating }) => (
 
 export default function DestinationPage({ destination, destImg, onBack, onBook }) {
 
-  // ✅ FIXED ERROR (moved inside component)
+  
   const allHotels = useMemo(() => generateHotels(destination), [destination]);
 
   const [typeFilter, setTypeFilter] = useState("All");
@@ -214,7 +215,7 @@ export default function DestinationPage({ destination, destImg, onBack, onBook }
             ← Back to Home
           </button>
           <img
-            src="/src/assets/logo.jpeg"
+            src={logo}
             alt="FindMyStay"
             style={{ height: "50px", width: "auto" }}
           />
