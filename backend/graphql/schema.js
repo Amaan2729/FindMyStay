@@ -1,18 +1,18 @@
 const { buildSchema } = require("graphql");
 
-const schema = buildSchema(`
+module.exports = buildSchema(`
   type Booking {
-  id: ID!
-  name: String!
-  email: String!
-  phone: String!
-  hotel_name: String!
-  checkin: String!
-  checkout: String!
-  guests: Int!
-  rooms: Int!
-  total_price: Int!
-}
+    id: ID!
+    name: String!
+    email: String!
+    phone: String!
+    hotelName: String
+    checkin: String!
+    checkout: String!
+    guests: Int!
+    rooms: Int!
+    totalPrice: Int
+  }
 
   type Query {
     bookings: [Booking]
@@ -33,5 +33,3 @@ const schema = buildSchema(`
     ): Booking
   }
 `);
-
-module.exports = schema;

@@ -5,12 +5,12 @@ const Booking = sequelize.define("Booking", {
   name: DataTypes.STRING,
   email: DataTypes.STRING,
   phone: DataTypes.STRING,
-  hotel_name: DataTypes.STRING,
+  hotelName: DataTypes.STRING,
   checkin: DataTypes.DATE,
   checkout: DataTypes.DATE,
   guests: DataTypes.INTEGER,
   rooms: DataTypes.INTEGER,
-  total_price: DataTypes.INTEGER
+  totalPrice: DataTypes.INTEGER
 });
 
 module.exports = Booking;

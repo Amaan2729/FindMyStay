@@ -115,12 +115,12 @@ const handleConfirm = async () => {
         name: form.name,
         email: form.email,
         phone: form.phone,
-        hotel_name: hotel.name,
+        hotelName: hotel.name,
         checkin: form.checkin,
         checkout: form.checkout,
         guests: form.guests,
         rooms: form.rooms,
-        total_price: total,
+        totalPrice: total,
       }),
     });
 
