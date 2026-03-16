@@ -6,6 +6,8 @@ import TripSquad from "./TripSquad";
 import TravelBot from "./Travelbot";
 import BookNow from "./BookNow";
 import logo from "./assets/bd.png";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
 
 
 const destinations = [
@@ -329,6 +331,9 @@ if (selectedDest) {
 }
 
   return (
+   
+    
+
     <div
       style={{
         fontFamily: "'Playfair Display', Georgia, serif",
@@ -337,6 +342,7 @@ if (selectedDest) {
         color: "#1a1a1a",
       }}
     >
+     
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1528,7 +1534,10 @@ if (selectedDest) {
                         /night
                       </span>
                     </div>
-                    <button className="book-btn">Book Now</button>
+                    <button className="book-btn" onClick={() => window.location.href="/book"}>
+  Book Now
+</button>
+
                   </div>
                 </div>
               </div>

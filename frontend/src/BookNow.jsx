@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 const socket = io("http://localhost:5000"); // Socket connection
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // --- Sample hotel data for standalone demo ---
 const demoHotel = {
@@ -95,7 +97,10 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
     if (validate()) setStep(2);
   };
 
-  
+  const bookingId =
+    "FMS" +
+    Math.random().toString(36).toUpperCase().slice(2, 8);
+
   
 
 const handleConfirm = async () => {
@@ -145,16 +150,16 @@ useEffect(() => {
     console.log("Socket connected", socket.id);
   });
 
-  // Listen for booking confirmation
   socket.on("bookingConfirmed", (data) => {
-    alert(`🎉 Booking confirmed for ${data.hotelName}!\nGuest: ${data.user}\nTotal: ₹${data.total}`);
-  });
+  toast.success(
+    `🎉 Booking confirmed for ${data.hotelName} | Guest: ${data.user} | Total: ₹${data.total}`
+  );
+});
 
   // Optional: listen for updates from other users
   socket.on("bookingUpdate", (data) => {
-    alert(`🔔 Update: Booking at ${data.hotelName}`);
-  });
-
+  toast.info(`🔔 New booking at ${data.hotelName}`);
+});
   return () => {
     socket.off("bookingConfirmed");
     socket.off("bookingUpdate");
@@ -162,12 +167,10 @@ useEffect(() => {
 }, []);
    
 
-  const bookingId =
-    "FMS" +
-    Math.random().toString(36).toUpperCase().slice(2, 8);
-
+  
   return (
     <>
+      <ToastContainer position="top-right" autoClose={4000} />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
