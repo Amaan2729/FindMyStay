@@ -1534,7 +1534,10 @@ if (selectedDest) {
                         /night
                       </span>
                     </div>
-                    <button className="book-btn" onClick={() => window.location.href="/book"}>
+                    <button 
+  className="book-btn" 
+  onClick={() => setSelectedHotel(h)}
+>
   Book Now
 </button>
 
