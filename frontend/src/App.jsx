@@ -7,7 +7,7 @@ import TravelBot from "./Travelbot";
 import BookNow from "./BookNow";
 import logo from "./assets/bd.png";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
+import AboutPage from "./pages/About";
 
 
 const destinations = [
@@ -305,6 +305,7 @@ export default function FindMyStay() {
     return <SignupPage onNavigate={setPage} onLogin={handleLogin} />;
   if (page === "tripsquad") return <TripSquad onBack={() => setPage("home")} />;
 
+  if (page === "about") return <AboutPage onNavigate={setPage} user={user} onLogout={handleLogout} />;
  
 
     if (selectedHotel) {
@@ -617,8 +618,8 @@ if (selectedDest) {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
           {["Explore", "Deals", "About", "Blog"].map((l) => (
-            <a key={l} className="nav-link">
-              {l}
+  <a key={l} className="nav-link" onClick={() => l === "About" && setPage("about")} style={{ cursor: "pointer" }}>
+    {l}
             </a>
           ))}
         </div>
