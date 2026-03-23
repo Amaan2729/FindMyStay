@@ -14,6 +14,7 @@ const bookingRoutes = require("./routes/booking");
 const app = express();
 const httpServer = createServer(app);
 
+
 // Middleware
 app.use(cors());
 app.use(express.json());
