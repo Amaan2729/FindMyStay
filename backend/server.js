@@ -72,7 +72,7 @@ io.on("connection", (socket) => {
 // Database sync and start server
 sequelize.sync({ alter: true }).then(() => {
   httpServer.listen(5000, () => {
-    console.log("Server running on port 5000 with Socket.IO");
+    console.log("FindMyStay backend running on port 5000");
   });
 });
 // testing commit
