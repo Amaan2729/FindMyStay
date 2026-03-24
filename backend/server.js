@@ -1,3 +1,4 @@
+ // Backend server setup for FindMyStay
 const express = require("express");
 const cors = require("cors");
 const { createServer } = require("http");
