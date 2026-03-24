@@ -74,3 +74,4 @@ sequelize.sync({ alter: true }).then(() => {
     console.log("Server running on port 5000 with Socket.IO");
   });
 });
+// testing commit
