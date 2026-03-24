@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
+// Socket.IO handles real-time booking updates between users
 const sequelize = require("./config/db");
 
 const { graphqlHTTP } = require("express-graphql");
