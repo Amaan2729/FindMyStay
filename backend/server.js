@@ -1,4 +1,4 @@
- // Backend server setup for FindMyStay
+ // Handles API routes, database connection, and real-time updates
 const express = require("express");
 const cors = require("cors");
 const { createServer } = require("http");
