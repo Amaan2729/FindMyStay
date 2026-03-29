@@ -9,20 +9,13 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
-  "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-<<<<<<< HEAD
-<<<<<<< HEAD
-    "react-router-dom": "^7.13.2",
-=======
->>>>>>> 12847bf7ccfed7a793169a644bb367f6d00141b6
-=======
-    "react-router-dom": "^7.13.2",
->>>>>>> f650562 (BOOKING AVAILABILTY OF ROOMS UPDATED ROOMS LIMIT)
-    "react-toastify": "^11.0.5",
-    "socket.io-client": "^4.8.3"
-  },
+"dependencies": {
+  "react": "^19.2.0",
+  "react-dom": "^19.2.0",
+  "react-router-dom": "^7.13.2",
+  "react-toastify": "^11.0.5",
+  "socket.io-client": "^4.8.3"
+},
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@types/react": "^19.2.7",
