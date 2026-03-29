@@ -287,7 +287,7 @@ This project was developed collaboratively by the following team members:
 Shruti  – Backend Developer & Database Management
 Responsible for designing and developing the backend system using Node.js and Express. Implemented booking APIs, handled business logic for room availability, and managed the database using Sequelize and MySQL, including transaction handling to prevent overbooking.
 Aarnav Kaushal – Frontend Developer
-Worked on designing and developing the user interface using React. Implemented UI components, handled user interactions, and ensured a responsive and interactive experience across the application.
+Worked on designing and developing the user interface. Implemented UI components, handled user interactions, and ensured a responsive and interactive experience across the application.
 Amaan ur Rehman – Backend Support & Testing
 Contributed to backend development support, assisted in API integration, performed testing and debugging, and helped ensure the stability and correctness of booking and availability features.
 
