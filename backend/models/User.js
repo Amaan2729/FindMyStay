@@ -4,27 +4,22 @@ const sequelize = require("../config/db");
 const User = sequelize.define(
   "User",
   {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
     name: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: false
     },
     email: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
+      unique: "unique_email"
     },
     password: {
       type: DataTypes.STRING,
-      allowNull: false,
-    },
+      allowNull: false
+    }
   },
   {
-    timestamps: false   // ⭐ ADD THIS LINE
+    timestamps: false // disables createdAt and updatedAt
   }
 );
 

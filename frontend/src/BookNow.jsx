@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 const socket = io("http://localhost:5000"); // Socket connection
 import { ToastContainer, toast } from "react-toastify";
@@ -63,6 +63,9 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
+  const [bookedRooms, setBookedRooms] = useState(0);
+const [totalRooms, setTotalRooms] = useState(10);
+
   const nights =
     form.checkin && form.checkout
       ? Math.max(
@@ -76,6 +79,8 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
   const subtotal = nights * hotel.price * parseInt(form.rooms || 1);
   const taxes = Math.round(subtotal * 0.18);
   const total = subtotal + taxes;
+
+  const [availableRooms, setAvailableRooms] = useState(null);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -103,7 +108,7 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
 
   
 
-const handleConfirm = async () => {
+/*const handleConfirm = async () => {
   setLoading(true);
 
   try {
@@ -142,7 +147,95 @@ const handleConfirm = async () => {
   } finally {
     setLoading(false);
   }
+};*/
+const handleConfirm = async () => {
+  if (availableRooms === null) {
+  alert("Checking availability...");
+  return;
+}
+
+  // ✅ ADD THIS BLOCK
+  if (availableRooms === 0) {
+    alert("❌ No rooms available");
+    return;
+  }
+
+
+  if (parseInt(form.rooms) > availableRooms) {
+    alert(`❌ Only ${availableRooms} rooms available`);
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const res = await fetch("http://localhost:5000/api/book", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        hotelName: hotel.name,
+        checkin: form.checkin,
+        checkout: form.checkout,
+        guests: form.guests,
+        rooms: form.rooms,
+        totalPrice: total,
+      }),
+    });
+
+    const data = await res.json();
+   if (!res.ok) {
+  alert(data.error || "Booking failed");
+  setLoading(false);
+  return;
+}
+
+    const finalBookingId = data.bookingId || bookingId;
+
+socket.emit("newBooking", {
+  bookingId: finalBookingId,
+
+  
+      hotelName: hotel.name,
+      user: form.name,
+      total,
+    });
+
+    setStep(3);
+  } catch (err) {
+    console.error("Booking error:", err);
+    alert("Booking failed. Check backend.");
+  } finally {
+    setLoading(false);
+  }
 };
+
+useEffect(() => {
+  if (form.checkin && form.checkout) {
+    fetch("http://localhost:5000/api/check-availability", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        hotelName: hotel.name,
+        checkin: form.checkin,
+        checkout: form.checkout,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+       setAvailableRooms(data.availableRooms);
+setBookedRooms(data.bookedRooms);
+setTotalRooms(data.totalRooms);
+        })
+.catch(() => {
+  setAvailableRooms(0);
+      });
+  }
+}, [form.checkin, form.checkout]);
 
 useEffect(() => {
   // Confirm connection
@@ -161,6 +254,7 @@ useEffect(() => {
   toast.info(`🔔 New booking at ${data.hotelName}`);
 });
   return () => {
+    socket.off("connect");
     socket.off("bookingConfirmed");
     socket.off("bookingUpdate");
   };
@@ -673,9 +767,8 @@ useEffect(() => {
               { num: 2, label: "Review" },
               { num: 3, label: "Confirmed" },
             ].map((s, i) => (
-              <>
+              <React.Fragment key={s.num}>
                 <div
-                  key={s.num}
                   className={`bn-step ${
                     step === s.num
                       ? "active"
@@ -690,7 +783,7 @@ useEffect(() => {
                   {s.label}
                 </div>
                 {i < 2 && <div className="bn-step-sep" />}
-              </>
+              </React.Fragment>
             ))}
           </div>
         </div>
@@ -826,6 +919,29 @@ useEffect(() => {
                           </option>
                         ))}
                       </select>
+                       {/* ✅ ADD THIS BELOW SELECT */}
+  {/* ✅ UPDATED AVAILABILITY UI */}
+{availableRooms !== null && (
+  <div style={{ marginTop: "6px", fontSize: "12px" }}>
+    
+    <p
+      style={{
+        color: availableRooms > 0 ? "green" : "red",
+        fontWeight: "500"
+      }}
+    >
+      {availableRooms > 0
+        ? `✅ ${availableRooms} rooms available`
+        : "❌ No rooms available"}
+    </p>
+
+    {/* ✅ NEW LINE */}
+    <p style={{ color: "#555", fontSize: "11px" }}>
+      🛏️ {bookedRooms} booked / {totalRooms} total
+    </p>
+
+  </div>
+)}
                     </div>
                   </div>
 
@@ -1209,6 +1325,19 @@ useEffect(() => {
                   </span>
                 </div>
               )}
+              <div style={{
+  background: "#f5f2ee",
+  padding: "8px",
+  borderRadius: "8px",
+  marginTop: "6px"
+}}>
+  <div style={{ color: "green", fontWeight: "600" }}>
+    Available: {availableRooms}
+  </div>
+  <div style={{ fontSize: "11px", color: "#777" }}>
+    Booked: {bookedRooms} / {totalRooms}
+  </div>
+</div>
             </div>
           </div>
         </div>
