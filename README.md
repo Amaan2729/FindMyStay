@@ -1,26 +1,12 @@
 
-
-
 <img width="318" height="233" alt="image" src="https://github.com/user-attachments/assets/200229c8-1add-44a5-8af4-269ebf0a106c" />
 
 
-
-                                                                       🏨 FindMyStay – Hotel Booking System
-
+🏨 FindMyStay – Hotel Booking System
 
 📑 Table of Contents
-1. Overview
-2. Key Features
-3. Technology Stack
-4. Architecture
-5. Database Schema
-6. Installation & Setup
-7. Running the Application
-8. API Documentation
-9. Project Structure
-10. Security Features
-11. For College Evaluation
-12 Project Members 
+1. Overview  2. Key Features  3. Technology Stack   4. Architecture 5. Database Schema 6. Installation & Setup 7. Running the Application 8. API Documentation
+9. Project Structure 10. Security Features 11. For College Evaluation 12 Project Members 
 
 # 1️⃣ Overview
 
@@ -33,6 +19,21 @@ The system is designed to:
 * Provide a smooth booking experience
 
 It simulates a real-world booking platform like: Booking.com
+
+SCREENSHOTS OF PROJECT: 
+
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/9e9440c8-d2bf-433f-8015-1ad22b063604" />
+Home Page 
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/63c87f64-7d12-4de9-b54a-c46c49b5a752" />
+Booking Page: Guest Details
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/9ab91400-df48-487c-bb81-c845057c8a4e" />
+Review Your Booking: You can edit Booking details or reviews or details
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/c263032e-ba79-43aa-8166-0e6564b2c253" />
+Confirmation Page: Confirm Booking 
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/4fbace57-4625-4676-bfdd-ad8e25a28407" />
+Availabilty of Rooms: when Rooms where not Available Case
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/a98f5a41-85f3-498c-8192-48d7e7e75ab7" />
+About Page 
 
 2️⃣ Key Features
 
@@ -150,11 +151,7 @@ npm install
 * Install MySQL
 * Create database:
 
-```sql
 CREATE DATABASE findmystay;
-```
-
-* Update `config/db.js` with credentials root,"12345678"
 
 # 7️⃣ Running the Application
 
