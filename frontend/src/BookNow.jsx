@@ -64,7 +64,7 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
   const [loading, setLoading] = useState(false);
 
   const [bookedRooms, setBookedRooms] = useState(0);
-const [totalRooms, setTotalRooms] = useState(10);
+  const [totalRooms, setTotalRooms] = useState(10);
 
   const nights =
     form.checkin && form.checkout
@@ -81,6 +81,10 @@ const [totalRooms, setTotalRooms] = useState(10);
   const total = subtotal + taxes;
 
   const [availableRooms, setAvailableRooms] = useState(null);
+
+  // ✅ Modal states
+  const [showNoRoomModal, setShowNoRoomModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -106,162 +110,120 @@ const [totalRooms, setTotalRooms] = useState(10);
     "FMS" +
     Math.random().toString(36).toUpperCase().slice(2, 8);
 
-  
+  // ✅ handleConfirm — alerts replaced with professional modal
+  const handleConfirm = async () => {
+    if (availableRooms === null) {
+      alert("Checking availability...");
+      return;
+    }
 
-/*const handleConfirm = async () => {
-  setLoading(true);
+    // ✅ Show modal instead of alert
+    if (availableRooms === 0) {
+      setModalMessage(`All rooms are fully booked for your selected dates.`);
+      setShowNoRoomModal(true);
+      return;
+    }
 
-  try {
-    // Send booking to backend via API
-    const res = await fetch("http://localhost:5000/api/book", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        hotelName: hotel.name,
-        checkin: form.checkin,
-        checkout: form.checkout,
-        guests: form.guests,
-        rooms: form.rooms,
-        totalPrice: total,
-      }),
-    });
+    if (parseInt(form.rooms) > availableRooms) {
+      setModalMessage(
+        `Only ${availableRooms} room${availableRooms > 1 ? "s" : ""} available for your selected dates.`
+      );
+      setShowNoRoomModal(true);
+      return;
+    }
 
-    const data = await res.json();
-    console.log("Backend Response:", data);
+    setLoading(true);
 
-    // Emit new booking via Socket
-    socket.emit("newBooking", {
-      bookingId: data.bookingId || bookingId,
-      hotelName: hotel.name,
-      user: form.name,
-      total,
-    });
-
-    setStep(3);
-  } catch (err) {
-    console.error("Booking error:", err);
-    alert("Booking failed. Check backend.");
-  } finally {
-    setLoading(false);
-  }
-};*/
-const handleConfirm = async () => {
-  if (availableRooms === null) {
-  alert("Checking availability...");
-  return;
-}
-
-  // ✅ ADD THIS BLOCK
-  if (availableRooms === 0) {
-    alert("❌ No rooms available");
-    return;
-  }
-
-
-  if (parseInt(form.rooms) > availableRooms) {
-    alert(`❌ Only ${availableRooms} rooms available`);
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const res = await fetch("http://localhost:5000/api/book", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        hotelName: hotel.name,
-        checkin: form.checkin,
-        checkout: form.checkout,
-        guests: form.guests,
-        rooms: form.rooms,
-        totalPrice: total,
-      }),
-    });
-
-    const data = await res.json();
-   if (!res.ok) {
-  alert(data.error || "Booking failed");
-  setLoading(false);
-  return;
-}
-
-    const finalBookingId = data.bookingId || bookingId;
-
-socket.emit("newBooking", {
-  bookingId: finalBookingId,
-
-  
-      hotelName: hotel.name,
-      user: form.name,
-      total,
-    });
-
-    setStep(3);
-  } catch (err) {
-    console.error("Booking error:", err);
-    alert("Booking failed. Check backend.");
-  } finally {
-    setLoading(false);
-  }
-};
-
-useEffect(() => {
-  if (form.checkin && form.checkout) {
-    fetch("http://localhost:5000/api/check-availability", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        hotelName: hotel.name,
-        checkin: form.checkin,
-        checkout: form.checkout,
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-       setAvailableRooms(data.availableRooms);
-setBookedRooms(data.bookedRooms);
-setTotalRooms(data.totalRooms);
-        })
-.catch(() => {
-  setAvailableRooms(0);
+    try {
+      const res = await fetch("http://localhost:5000/api/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          hotelName: hotel.name,
+          checkin: form.checkin,
+          checkout: form.checkout,
+          guests: form.guests,
+          rooms: form.rooms,
+          totalPrice: total,
+        }),
       });
-  }
-}, [form.checkin, form.checkout]);
 
-useEffect(() => {
-  // Confirm connection
-  socket.on("connect", () => {
-    console.log("Socket connected", socket.id);
-  });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Booking failed");
+        setLoading(false);
+        return;
+      }
 
-  socket.on("bookingConfirmed", (data) => {
-  toast.success(
-    `🎉 Booking confirmed for ${data.hotelName} | Guest: ${data.user} | Total: ₹${data.total}`
-  );
-});
+      const finalBookingId = data.bookingId || bookingId;
 
-  // Optional: listen for updates from other users
-  socket.on("bookingUpdate", (data) => {
-  toast.info(`🔔 New booking at ${data.hotelName}`);
-});
-  return () => {
-    socket.off("connect");
-    socket.off("bookingConfirmed");
-    socket.off("bookingUpdate");
+      socket.emit("newBooking", {
+        bookingId: finalBookingId,
+        hotelName: hotel.name,
+        user: form.name,
+        total,
+      });
+
+      setStep(3);
+    } catch (err) {
+      console.error("Booking error:", err);
+      alert("Booking failed. Check backend.");
+    } finally {
+      setLoading(false);
+    }
   };
-}, []);
-   
 
-  
+  useEffect(() => {
+    if (form.checkin && form.checkout) {
+      fetch("http://localhost:5000/api/check-availability", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          hotelName: hotel.name,
+          checkin: form.checkin,
+          checkout: form.checkout,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setAvailableRooms(data.availableRooms);
+          setBookedRooms(data.bookedRooms);
+          setTotalRooms(data.totalRooms);
+        })
+        .catch(() => {
+          setAvailableRooms(0);
+        });
+    }
+  }, [form.checkin, form.checkout]);
+
+  useEffect(() => {
+    // Confirm connection
+    socket.on("connect", () => {
+      console.log("Socket connected", socket.id);
+    });
+
+    socket.on("bookingConfirmed", (data) => {
+      toast.success(
+        `🎉 Booking confirmed for ${data.hotelName} | Guest: ${data.user} | Total: ₹${data.total}`
+      );
+    });
+
+    // Optional: listen for updates from other users
+    socket.on("bookingUpdate", (data) => {
+      toast.info(`🔔 New booking at ${data.hotelName}`);
+    });
+    return () => {
+      socket.off("connect");
+      socket.off("bookingConfirmed");
+      socket.off("bookingUpdate");
+    };
+  }, []);
+
   return (
     <>
       <ToastContainer position="top-right" autoClose={4000} />
@@ -752,6 +714,146 @@ useEffect(() => {
       `}</style>
 
       <div className="bn-root">
+
+        {/* ✅ PROFESSIONAL NO-ROOM MODAL */}
+        {showNoRoomModal && (
+          <div
+            onClick={() => setShowNoRoomModal(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.7)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: "#1a1a1a",
+                borderRadius: "16px",
+                border: "1px solid #333",
+                padding: "36px 32px",
+                maxWidth: "380px",
+                width: "90%",
+                textAlign: "center",
+                animation: "pop 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+              }}
+            >
+              <div
+                style={{
+                  width: "60px",
+                  height: "60px",
+                  background: "linear-gradient(135deg, #7f1d1d, #c0392b)",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 20px",
+                  fontSize: "26px",
+                }}
+              >
+                ✕
+              </div>
+
+              <p
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  letterSpacing: "1.5px",
+                  textTransform: "uppercase",
+                  color: "#c9a96e",
+                  marginBottom: "10px",
+                }}
+              >
+                Availability Alert
+              </p>
+
+              <h2
+                style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontSize: "22px",
+                  fontWeight: 700,
+                  color: "#fff",
+                  marginBottom: "10px",
+                }}
+              >
+                {availableRooms === 0 ? "No Rooms Available" : "Not Enough Rooms"}
+              </h2>
+
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "rgba(255,255,255,0.5)",
+                  lineHeight: 1.7,
+                  marginBottom: "24px",
+                }}
+              >
+                {modalMessage} Please try different dates or fewer rooms.
+              </p>
+
+              <div
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "10px",
+                  padding: "12px 16px",
+                  marginBottom: "24px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: "12px",
+                }}
+              >
+                <span style={{ color: "rgba(255,255,255,0.4)" }}>Rooms Booked</span>
+                <span style={{ color: "#e05a5a", fontWeight: 700 }}>
+                  {bookedRooms} / {totalRooms}
+                </span>
+              </div>
+
+              <button
+                style={{
+                  width: "100%",
+                  background: "linear-gradient(135deg, #c9a96e, #a07840)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "10px",
+                  padding: "13px",
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  marginBottom: "8px",
+                }}
+                onClick={() => {
+                  setShowNoRoomModal(false);
+                  setStep(1);
+                }}
+              >
+                Change Dates
+              </button>
+
+              <button
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  color: "rgba(255,255,255,0.4)",
+                  border: "none",
+                  padding: "10px",
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: "13px",
+                  cursor: "pointer",
+                }}
+                onClick={() => setShowNoRoomModal(false)}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* TOPBAR */}
         <div className="bn-topbar">
           {onBack && (
@@ -919,29 +1021,23 @@ useEffect(() => {
                           </option>
                         ))}
                       </select>
-                       {/* ✅ ADD THIS BELOW SELECT */}
-  {/* ✅ UPDATED AVAILABILITY UI */}
-{availableRooms !== null && (
-  <div style={{ marginTop: "6px", fontSize: "12px" }}>
-    
-    <p
-      style={{
-        color: availableRooms > 0 ? "green" : "red",
-        fontWeight: "500"
-      }}
-    >
-      {availableRooms > 0
-        ? `✅ ${availableRooms} rooms available`
-        : "❌ No rooms available"}
-    </p>
-
-    {/* ✅ NEW LINE */}
-    <p style={{ color: "#555", fontSize: "11px" }}>
-      🛏️ {bookedRooms} booked / {totalRooms} total
-    </p>
-
-  </div>
-)}
+                      {availableRooms !== null && (
+                        <div style={{ marginTop: "6px", fontSize: "12px" }}>
+                          <p
+                            style={{
+                              color: availableRooms > 0 ? "green" : "red",
+                              fontWeight: "500",
+                            }}
+                          >
+                            {availableRooms > 0
+                              ? `✅ ${availableRooms} rooms available`
+                              : "❌ No rooms available"}
+                          </p>
+                          <p style={{ color: "#555", fontSize: "11px" }}>
+                            🛏️ {bookedRooms} booked / {totalRooms} total
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1326,18 +1422,18 @@ useEffect(() => {
                 </div>
               )}
               <div style={{
-  background: "#f5f2ee",
-  padding: "8px",
-  borderRadius: "8px",
-  marginTop: "6px"
-}}>
-  <div style={{ color: "green", fontWeight: "600" }}>
-    Available: {availableRooms}
-  </div>
-  <div style={{ fontSize: "11px", color: "#777" }}>
-    Booked: {bookedRooms} / {totalRooms}
-  </div>
-</div>
+                background: "#f5f2ee",
+                padding: "8px",
+                borderRadius: "8px",
+                marginTop: "6px",
+              }}>
+                <div style={{ color: "green", fontWeight: "600" }}>
+                  Available: {availableRooms}
+                </div>
+                <div style={{ fontSize: "11px", color: "#777" }}>
+                  Booked: {bookedRooms} / {totalRooms}
+                </div>
+              </div>
             </div>
           </div>
         </div>
