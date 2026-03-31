@@ -5,6 +5,7 @@ const { createServer } = require("http");
 const { Server } = require("socket.io");
 // Socket.IO handles real-time booking updates between users
 const sequelize = require("./config/db");
+const { Hotel, Booking, User } = require("./models");
 
 const { graphqlHTTP } = require("express-graphql");
 const graphqlSchema = require("./graphql/schema");

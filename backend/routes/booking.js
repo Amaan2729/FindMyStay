@@ -2,13 +2,41 @@
 const express = require("express");
 const router = express.Router();
 const Booking = require("../models/Booking");
+const Hotel = require("../models/index").Hotel;
 const sequelize = require("../config/db");
 const { Op } = require("sequelize");
 
 const TOTAL_ROOMS = 10;
 
 
-// ✅ 1. CHECK AVAILABILITY API
+// ✅ 0. GET ALL HOTELS
+router.get("/hotels", async (req, res) => {
+  try {
+    const hotels = await Hotel.findAll({
+      order: [["createdAt", "DESC"]],
+    });
+    res.json(hotels);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// ✅ 1. GET HOTEL BY ID
+router.get("/hotels/:id", async (req, res) => {
+  try {
+    const hotel = await Hotel.findByPk(req.params.id);
+    if (!hotel) {
+      return res.status(404).json({ error: "Hotel not found" });
+    }
+    res.json(hotel);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// ✅ 2. CHECK AVAILABILITY API
 router.post("/check-availability", async (req, res) => {
   try {
     const { hotelName, checkin, checkout } = req.body;
@@ -41,7 +69,7 @@ router.post("/check-availability", async (req, res) => {
 });
 
 
-// ✅ 2. BOOK API
+// ✅ 3. BOOK API
 router.post("/book", async (req, res) => {
   const t = await sequelize.transaction();
 
