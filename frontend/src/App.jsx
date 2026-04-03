@@ -1,13 +1,17 @@
-﻿import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { BrowserRouter as Router } from "react-router-dom";
+import { io } from "socket.io-client";
 import DestinationPage from "./DestinationPage";
 import LoginPage from "./LoginPage";
 import SignupPage from "./Signuppage";
 import TripSquad from "./TripSquad";
 import TravelBot from "./Travelbot";
 import BookNow from "./BookNow";
+import HotelPreviewModal from "./components/HotelPreviewModal";
 import logo from "./assets/bd.png";
 import AboutPage from "./pages/About";
+import AdminLogin from "./pages/AdminLogin";
+import AdminPage from "./pages/Admin";
 import GlobalStyle from "./components/GlobalStyle";
 import NavBar from "./components/NavBar";
 import HeroSearch from "./components/HeroSearch";
@@ -17,6 +21,13 @@ import OffersSection from "./components/OffersSection";
 import SquadSection from "./components/SquadSection";
 import WhyChooseSection from "./components/WhyChooseSection";
 import SiteFooter from "./components/SiteFooter";
+
+const getInitialPage = () => {
+  if (typeof window === "undefined") return "home";
+  const path = window.location.pathname.replace("/", "");
+  const allowed = ["home", "login", "signup", "tripsquad", "about", "book", "admin", "admin-login"];
+  return allowed.includes(path) ? path : "home";
+};
 
 const destinations = [
   { name: "Goa", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=400&q=80", hotels: 1240, desc: "Beaches, nightlife, and Portuguese heritage." },
@@ -64,22 +75,105 @@ export default function FindMyStay() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchedQuery, setSearchedQuery] = useState("");
   const [noResult, setNoResult] = useState(false);
-  const [page, setPage] = useState("home");
+  const [page, setPage] = useState(getInitialPage());
   const [user, setUser] = useState(null);
+  const [admin, setAdmin] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
   const destSectionRef = useRef(null);
+  
+  // New state for hotel preview modal
+  const [showHotelPreview, setShowHotelPreview] = useState(false);
+  const [previewHotel, setPreviewHotel] = useState(null);
+  const [displayedFeaturedHotels, setDisplayedFeaturedHotels] = useState(featuredHotels);
+
+  // Fetch hotels from database with aggressive caching
+  useEffect(() => {
+    const fetchHotels = async () => {
+      try {
+        // 🚀 Check localStorage cache first
+        const cachedHotels = localStorage.getItem("findmystay_hotels_cache");
+        if (cachedHotels) {
+          console.log("⚡ Using cached hotels");
+          const hotels = JSON.parse(cachedHotels);
+          const transformedHotels = hotels.slice(0, 4).map((h) => ({
+            ...h,
+            amenities: typeof h.amenities === 'string' ? JSON.parse(h.amenities) : h.amenities || [],
+            tag: h.type || "Hotel",
+            tagColor: h.type === "Resort" ? "#3d8b6e" : h.type === "Hotel" ? "#d4a843" : "#e05a2b",
+          }));
+          setDisplayedFeaturedHotels(transformedHotels);
+          return; // Exit early with cached data
+        }
+
+        // 🔄 Fetch fresh data in background
+        console.log("🔄 Fetching hotels from API...");
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 sec timeout
+        
+        const response = await fetch("http://localhost:5000/api/hotels", {
+          signal: controller.signal,
+          headers: { "Content-Type": "application/json" }
+        });
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const hotels = await response.json();
+          if (hotels && hotels.length > 0) {
+            // 💾 Cache for next time
+            localStorage.setItem("findmystay_hotels_cache", JSON.stringify(hotels));
+            
+            const transformedHotels = hotels.slice(0, 4).map((h) => ({
+              ...h,
+              amenities: typeof h.amenities === 'string' ? JSON.parse(h.amenities) : h.amenities || [],
+              tag: h.type || "Hotel",
+              tagColor: h.type === "Resort" ? "#3d8b6e" : h.type === "Hotel" ? "#d4a843" : "#e05a2b",
+            }));
+            console.log("📊 Fresh hotels loaded and cached");
+            setDisplayedFeaturedHotels(transformedHotels);
+          }
+        }
+      } catch (error) {
+        console.warn("⚠️  API error (using local cache):", error.message);
+        // Keep default hotels if API fails - user can still book
+      }
+    };
+
+    fetchHotels();
+  }, []);
 
   useEffect(() => {
-    const path = window.location.pathname.replace("/", "");
-    if (
-      path === "login" ||
-      path === "signup" ||
-      path === "tripsquad" ||
-      path === "about" ||
-      path === "book"
-    ) {
-      setPage(path);
-    } else {
-      setPage("home");
+    const socket = io("http://localhost:5000");
+
+    socket.on("connect", () => {
+      console.log("Socket connected in App", socket.id);
+    });
+
+    socket.on("bookingUpdate", (data) => {
+      console.log("Real-time booking update received", data);
+      const text = `New booking: ${data.user} booked ${data.rooms} room(s) at ${data.hotelName} from ${data.checkin} to ${data.checkout}`;
+      setNotifications((prev) => [{ id: Date.now(), text, createdAt: new Date().toISOString() }, ...prev].slice(0, 8));
+      setUnreadCount((count) => count + 1);
+
+      // Optional deep integration: browser notification
+      if (Notification && Notification.permission === "granted") {
+        new Notification("FindMyStay booking", { body: text, icon: "/favicon.ico" });
+      }
+    });
+
+    return () => {
+      socket.off("connect");
+      socket.off("bookingUpdate");
+      socket.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission === "default") {
+        Notification.requestPermission().catch(() => {});
+      }
     }
   }, []);
 
@@ -90,10 +184,19 @@ export default function FindMyStay() {
     }
   }, [page]);
 
-  const openBooking = (hotel) => {
-    setSelectedHotel(hotel);
+  const openBooking = useCallback((hotel) => {
+    console.log("🔴 openBooking called with:", hotel.name);
+    setPreviewHotel(hotel);
+    setShowHotelPreview(true);
+  }, []);
+
+  const proceedToBooking = useCallback(() => {
+    console.log("🟡 proceedToBooking called");
+    setSelectedHotel(previewHotel);
+    setShowHotelPreview(false);
     setPage("book");
-  };
+    console.log("🟢 Set page to 'book'");
+  }, [previewHotel]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60);
@@ -101,7 +204,7 @@ export default function FindMyStay() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleParallax = (e, cardEl, imgEl) => {
+  const handleParallax = useCallback((e, cardEl, imgEl) => {
     const rect = cardEl.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
@@ -109,14 +212,14 @@ export default function FindMyStay() {
     imgEl.style.transform = `scale(1.12) translateX(${x * 18}px) translateY(${y * 18}px)`;
     const shine = cardEl.querySelector(".dest-shine");
     if (shine) shine.style.background = `radial-gradient(circle at ${ (x + 0.5) * 100}% ${ (y + 0.5) * 100}%, rgba(255,255,255,0.22) 0%, transparent 65%)`;
-  };
+  }, []);
 
-  const resetParallax = (cardEl, imgEl) => {
+  const resetParallax = useCallback((cardEl, imgEl) => {
     cardEl.style.transform = "perspective(900px) rotateY(0deg) rotateX(0deg) scale(1)";
     imgEl.style.transform = "scale(1) translateX(0px) translateY(0px)";
-  };
+  }, []);
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     const q = searchQuery.trim().toLowerCase();
     const match = destinations.find((d) => d.name.toLowerCase().includes(q));
     setSearchedQuery(searchQuery.trim());
@@ -132,46 +235,100 @@ export default function FindMyStay() {
       setNoResult(true);
       destSectionRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  };
+  }, [searchQuery]);
 
-  const filters = ["All", "Hotels", "Resorts", "Motels", "Villas", "Homestays", "Hostels"];
-  const handleLogin = (userData) => { setUser(userData); setPage("home"); };
-  const handleLogout = () => setUser(null);
+  const filters = useMemo(() => ["All", "Hotels", "Resorts", "Motels", "Villas", "Homestays", "Hostels"], []);
+  const handleLogin = useCallback((userData) => { setUser(userData); setPage("home"); }, []);
+  const handleLogout = useCallback(() => { setUser(null); setAdmin(false); setPage("home"); }, []);
 
-  if (page === "login") return <LoginPage onNavigate={setPage} onLogin={handleLogin} />;
-  if (page === "signup") return <SignupPage onNavigate={setPage} onLogin={handleLogin} />;
-  if (page === "tripsquad") return <TripSquad onBack={() => setPage("home")} />;
-  if (page === "about") return <AboutPage onNavigate={setPage} user={user} onLogout={handleLogout} />;
-  if (page === "book" || selectedHotel) {
+  if (page === "admin-login") return <AdminLogin onAdminLogin={() => { setAdmin(true); setPage("admin"); }} onBack={() => setPage("home")} />;
+  if (page === "admin") {
+    if (!admin) {
+      return <AdminLogin onAdminLogin={() => { setAdmin(true); setPage("admin"); }} onBack={() => setPage("home")} />;
+    }
+    return <AdminPage onBack={() => { setAdmin(false); setPage("home"); }} />;
+  }
+  if (page === "login") return <LoginPage onNavigate={setPage} onLogin={handleLogin} onAdminLogin={() => { setAdmin(true); setPage("admin"); }} />;
+  if (page === "signup") return <SignupPage onNavigate={setPage} />;
+  if (page === "about") return <AboutPage setPage={setPage} />;
+  
+  if (page === "tripsquad") {
+    return <TripSquad onBack={() => setPage("home")} />;
+  }
+
+  // BookNow page - only show when page === "book"
+  if (page === "book") {
     return (
       <BookNow
         hotel={selectedHotel}
-        onBack={() => {
+        onBack={({ fromStep } = {}) => {
+          const currentStep = Number(fromStep) || Number(localStorage.getItem("booknow_step")) || 1;
+          console.log("🔙 Back button called from BookNow, fromStep:", fromStep, "resolvedStep:", currentStep);
+          if (currentStep > 1) {
+            console.log("⏪ In-book back flow: not leaving page (step", currentStep, ")");
+            return;
+          }
+          console.log("🏠 Exiting booking flow to home");
+          localStorage.removeItem("booknow_step");
           setSelectedHotel(null);
           setPage("home");
         }}
       />
     );
   }
-  if (selectedDest)
+  
+  const hasSelectedDest = Boolean(selectedDest && selectedDest.name);
+
+  if (hasSelectedDest) {
     return (
-      <DestinationPage
-        destination={selectedDest.name}
-        destImg={selectedDest.img}
-        onBack={() => {
-          setSelectedDest(null);
-          window.scrollTo(0, 0);
-        }}
-        onBook={(hotel) => openBooking(hotel)}
-      />
+      <>
+        <DestinationPage
+          destination={selectedDest.name}
+          destImg={selectedDest.img}
+          onBack={() => {
+            setSelectedDest(null);
+            window.scrollTo(0, 0);
+          }}
+          onBook={(hotel) => openBooking(hotel)}
+        />
+        
+        {/* Hotel Preview Modal for Destination Page */}
+        {showHotelPreview && previewHotel && (
+          <HotelPreviewModal
+            hotel={previewHotel}
+            onClose={() => setShowHotelPreview(false)}
+            onProceed={proceedToBooking}
+          />
+        )}
+      </>
     );
+  }
 
   return (
     <Router>
       <div style={{ fontFamily: "'Playfair Display', Georgia, serif", background: "#faf8f5", minHeight: "100vh", color: "#1a1a1a" }}>
         <GlobalStyle />
-      <NavBar scrolled={scrolled} logo={logo} user={user} setPage={setPage} handleLogout={handleLogout} />
-      <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #0f0c08 0%, #1c1409 30%, #2a1e0e 60%, #1a1209 100%)", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", padding: "100px 5% 60px" }}>
+      <NavBar
+        scrolled={scrolled}
+        logo={logo}
+        user={user}
+        admin={admin}
+        setPage={setPage}
+        handleLogout={handleLogout}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        showNotifPanel={showNotifPanel}
+        onToggleNotifications={() => {
+          setShowNotifPanel((v) => !v);
+          if (unreadCount > 0) setUnreadCount(0);
+        }}
+        onClearNotifications={() => {
+          setNotifications([]);
+          setUnreadCount(0);
+        }}
+      />
+      <div className="hero-area" style={{ minHeight: "100vh", background: "linear-gradient(160deg, #0f0c08 0%, #1c1409 30%, #2a1e0e 60%, #1a1209 100%)", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", padding: "100px 5% 60px" }}>
+        <div className="hero-glow" />
         <div style={{ position: "absolute", inset: 0, backgroundImage: `url('https://plus.unsplash.com/premium_photo-1661964071015-d97428970584?q=80&w=1320&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.18 }} />
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 30% 50%, rgba(201,169,110,0.12) 0%, transparent 60%)" }} />
         <div style={{ position: "relative", maxWidth: 920, margin: "0 auto", width: "100%", textAlign: "center" }}>
@@ -193,9 +350,9 @@ export default function FindMyStay() {
         </div>
       </div>
 
-      <div style={{ background: "#1a1a1a", padding: "24px 5%", display: "flex", justifyContent: "center", gap: "80px", flexWrap: "wrap" }}>
+      <div className="dark-stats" style={{ background: "#1a1a1a", padding: "24px 5%", display: "flex", justifyContent: "center", gap: "80px", flexWrap: "wrap" }}>
         {[{ num: "50K+", label: "Properties Listed" }, { num: "2M+", label: "Happy Travelers" }, { num: "500+", label: "Cities Covered" }, { num: "24/7", label: "Customer Support" }].map((s) => (
-          <div key={s.label} style={{ textAlign: "center" }}>
+          <div key={s.label} className="stat-glass" style={{ textAlign: "center" }}>
             <div style={{ fontFamily: "'Playfair Display'", fontWeight: 900, fontSize: "28px", color: "#c9a96e" }}>{s.num}</div>
             <div style={{ fontFamily: "'DM Sans'", fontSize: "12px", color: "rgba(255,255,255,0.5)", letterSpacing: "0.5px", marginTop: "4px" }}>{s.label}</div>
           </div>
@@ -203,11 +360,21 @@ export default function FindMyStay() {
       </div>
 
       <DestinationSection destSectionRef={destSectionRef} destinations={destinations} searchedQuery={searchedQuery} noResult={noResult} setNoResult={setNoResult} setSearchedQuery={setSearchedQuery} setSearchQuery={setSearchQuery} setSelectedDest={setSelectedDest} handleParallax={handleParallax} resetParallax={resetParallax} />
-      <FeaturedHotelsSection featuredHotels={featuredHotels} openBooking={openBooking} filters={filters} activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
+      <FeaturedHotelsSection featuredHotels={displayedFeaturedHotels} openBooking={openBooking} filters={filters} activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
+      
+      {/* Hotel Preview Modal */}
+      {showHotelPreview && previewHotel && (
+        <HotelPreviewModal
+          hotel={previewHotel}
+          onClose={() => setShowHotelPreview(false)}
+          onProceed={proceedToBooking}
+        />
+      )}
+      
       <OffersSection />
       <SquadSection setPage={setPage} />
       <WhyChooseSection />
-      <SiteFooter logo={logo} />
+      <SiteFooter logo={logo} onAdminAccess={() => setPage("admin-login")} />
       <TravelBot />
       </div>
     </Router>

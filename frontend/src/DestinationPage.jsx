@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import logo from "./assets/bd.png";
 
 const generateHotels = (destination) => {
+  const safeDestination = typeof destination === "string" && destination.length ? destination : "Destination";
   const types = ["Hotel", "Resort", "Motel", "Villa", "Homestay", "Hostel"];
 
   const amenitiesList = [
@@ -28,7 +29,7 @@ const generateHotels = (destination) => {
   const prefixes = ["The","Grand","Royal","Luxury","Heritage","Serene","Golden","Elite","Paradise","Bliss"];
   const suffixes = ["Palace","Inn","Retreat","Suites","Lodge","Haveli","Residency","Enclave","Nest","Abode"];
 
-  const seed = destination.charCodeAt(0);
+  const seed = safeDestination.charCodeAt(0);
 
   return Array.from({ length: 24 }, (_, i) => {
     const type = types[(seed + i) % types.length];
@@ -66,10 +67,9 @@ const StarRating = ({ rating }) => (
   </span>
 );
 
-export default function DestinationPage({ destination, destImg, onBack, onBook }) {
-
-  
-  const allHotels = useMemo(() => generateHotels(destination), [destination]);
+export default function DestinationPage({ destination = "Destination", onBook = () => {}, onBack = () => {} }) {
+  const finalDestination = destination || "Destination";
+  const allHotels = useMemo(() => generateHotels(finalDestination), [finalDestination]);
 
   const [typeFilter, setTypeFilter] = useState("All");
   const [minRating, setMinRating] = useState(0);
@@ -180,7 +180,7 @@ export default function DestinationPage({ destination, destImg, onBack, onBook }
         style={{ position: "relative", height: "320px", overflow: "hidden" }}
       >
         <img
-          src={destImg}
+          src="https://images.unsplash.com/photo-1506704720897-c6b0b8ef6dba?w=1200&q=80"
           alt={destination}
           style={{
             width: "100%",

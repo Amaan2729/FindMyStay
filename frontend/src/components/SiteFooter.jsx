@@ -1,4 +1,4 @@
-export default function SiteFooter({ logo }) {
+export default function SiteFooter({ logo, onAdminAccess }) {
   const columns = [
     { title: "Company", links: ["About Us", "Careers", "Press", "Blog", "Contact"] },
     { title: "Support", links: ["Help Center", "Cancellation", "Safety", "Accessibility"] },
@@ -38,7 +38,26 @@ export default function SiteFooter({ logo }) {
           ))}
         </div>
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-          <span style={{ fontFamily: "'DM Sans'", fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>© 2025 findmyStay. All rights reserved.</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <span style={{ fontFamily: "'DM Sans'", fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>© 2025 findmyStay. All rights reserved.</span>
+            {onAdminAccess && (
+              <button
+                onClick={onAdminAccess}
+                style={{
+                  fontFamily: "'DM Sans'",
+                  fontSize: "11px",
+                  color: "rgba(255,255,255,0.2)",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  padding: "2px 0"
+                }}
+              >
+                Admin
+              </button>
+            )}
+          </div>
           <span style={{ fontFamily: "'DM Sans'", fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>Privacy Policy · Terms of Service · Cookie Policy</span>
         </div>
       </div>

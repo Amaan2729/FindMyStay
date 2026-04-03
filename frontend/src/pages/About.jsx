@@ -86,7 +86,7 @@ function useScrollReveal() {
   return [ref, visible];
 }
 
-export default function AboutPage({ onNavigate, user, onLogout }) {
+export default function AboutPage({ setPage }) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -231,51 +231,28 @@ export default function AboutPage({ onNavigate, user, onLogout }) {
         display: "flex", alignItems: "center", justifyContent: "space-between",
         height: 68,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => onNavigate("home")}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => setPage("home")}> 
           <img src={logo} alt="FindMyStay" style={{ height: 50, width: "auto" }} />
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-          {["Explore", "Deals", "About", "Blog"].map(l => (
+          {['Explore', 'Deals', 'About', 'Blog'].map(l => (
             <a key={l} className={`nav-link-about${l === "About" ? " active-about" : ""}`}
-              onClick={() => l !== "About" && onNavigate("home")}>
+              onClick={() => l !== "About" && setPage("home")}>
               {l}
             </a>
           ))}
         </div>
 
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          {user ? (
-            <>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{
-                  width: 34, height: 34, borderRadius: "50%",
-                  background: "linear-gradient(135deg, #c9a96e, #a07840)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'DM Sans'", fontWeight: 700, fontSize: 14, color: "white",
-                }}>{user.name[0].toUpperCase()}</div>
-                <span style={{ fontFamily: "'DM Sans'", fontSize: 13, fontWeight: 600, color: "white" }}>
-                  Hi, {user.name}
-                </span>
-              </div>
-              <button onClick={onLogout} style={{
-                fontFamily: "'DM Sans'", fontSize: 13, fontWeight: 600, padding: "9px 22px",
-                borderRadius: 8, border: "1.5px solid rgba(255,255,255,0.3)",
-                background: "transparent", color: "white", cursor: "pointer",
-              }}>Logout</button>
-            </>
-          ) : (
-            <>
-              <button onClick={() => onNavigate("login")} style={{
-                fontFamily: "'DM Sans'", fontSize: 13, fontWeight: 600, padding: "9px 22px",
-                borderRadius: 8, border: "1.5px solid rgba(255,255,255,0.3)",
-                background: "transparent", color: "white", cursor: "pointer",
-              }}>Login</button>
-              <button onClick={() => onNavigate("signup")} className="search-btn-about" style={{ padding: "9px 22px", fontSize: 13 }}>
-                Sign Up
-              </button>
-            </>
-          )}
+          <button onClick={() => setPage("login")} style={{
+            fontFamily: "'DM Sans'", fontSize: 13, fontWeight: 600, padding: "9px 22px",
+            borderRadius: 8, border: "1.5px solid rgba(255,255,255,0.3)",
+            background: "transparent", color: "white", cursor: "pointer",
+          }}>Login</button>
+          <button onClick={() => setPage("signup")} className="search-btn-about" style={{ padding: "9px 22px", fontSize: 13 }}>
+            Sign Up
+          </button>
         </div>
       </nav>
 
@@ -335,7 +312,7 @@ export default function AboutPage({ onNavigate, user, onLogout }) {
           </p>
 
           <div className={`reveal d3 ${heroVisible ? "show" : ""}`} style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-            <button className="search-btn-about" onClick={() => onNavigate("home")}>Explore Stays</button>
+            <button className="search-btn-about" onClick={() => setPage("home")}>Explore Stays</button>
             <button className="outline-btn-about">Meet the Team ↓</button>
           </div>
         </div>
@@ -563,10 +540,10 @@ export default function AboutPage({ onNavigate, user, onLogout }) {
                 Over 50,000 handpicked stays across India — palaces, homestays, hill retreats &amp; beach havens, all in one place.
               </p>
               <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-                <button className="search-btn-about" style={{ padding: "14px 36px", fontSize: 15 }} onClick={() => onNavigate("home")}>
+                <button className="search-btn-about" style={{ padding: "14px 36px", fontSize: 15 }} onClick={() => setPage("home")}>
                   Start Exploring Stays
                 </button>
-                <button className="outline-btn-about" style={{ padding: "14px 36px", fontSize: 15 }} onClick={() => onNavigate("tripsquad")}>
+                <button className="outline-btn-about" style={{ padding: "14px 36px", fontSize: 15 }} onClick={() => setPage("tripsquad")}>
                   Plan with Your Squad ✈️
                 </button>
               </div>
@@ -580,7 +557,7 @@ export default function AboutPage({ onNavigate, user, onLogout }) {
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 40, marginBottom: 40 }} className="about-footer-grid">
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, cursor: "pointer" }} onClick={() => onNavigate("home")}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, cursor: "pointer" }} onClick={() => setPage("home")}>
                 <img src={logo} alt="FindMyStay" style={{ height: 45, width: "auto" }} />
               </div>
               <p style={{ fontFamily: "'DM Sans'", fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, maxWidth: 260 }}>

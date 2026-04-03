@@ -49,4 +49,40 @@ router.post("/login", async (req, res) => {
   }
 });
 
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@findmystay.com";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Admin@123";
+
+// Admin sign-in route
+router.post("/admin/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ message: "Email and password are required" });
+
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      return res.json({ message: "Admin login successful", admin: { email } });
+    }
+
+    return res.status(401).json({ message: "Invalid admin credentials" });
+  } catch (error) {
+    console.error("Admin login error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Admin end-point: get list of all users
+router.get("/users", async (req, res) => {
+  try {
+    const users = await User.findAll({ attributes: ["id", "name", "email"] });
+    const usersWithRole = users.map((user) => {
+      const safeUser = user.toJSON ? user.toJSON() : user;
+      const role = safeUser.email === ADMIN_EMAIL ? "Admin" : "Guest";
+      return { ...safeUser, role };
+    });
+    res.json(usersWithRole);
+  } catch (error) {
+    console.error("Get users error:", error);
+    res.status(500).json({ error: "Unable to fetch users" });
+  }
+});
+
 module.exports = router;

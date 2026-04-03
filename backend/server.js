@@ -44,6 +44,8 @@ app.use(
 const io = new Server(httpServer, {
   cors: { origin: "*" }, // change "*" to your frontend URL in production
 });
+app.set("io", io); // allow routes to emit through io
+
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import logo from "./assets/bd.png";
 
-export default function SignupPage({ onNavigate, onLogin }) {
+export default function SignupPage({ onNavigate }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -144,12 +144,12 @@ export default function SignupPage({ onNavigate, onLogin }) {
           >
             <button
               className="auth-btn"
-              onClick={() => onLogin({ name, email })}
+              onClick={() => onNavigate?.("home")}
             >
               Start Exploring 🗺️
             </button>
             <button
-              onClick={() => onNavigate("login")}
+              onClick={() => onNavigate?.("login")}
               style={{
                 fontFamily: "'DM Sans'",
                 fontSize: "13px",
@@ -259,7 +259,7 @@ export default function SignupPage({ onNavigate, onLogin }) {
         >
           <div
             style={{ cursor: "pointer", marginBottom: "48px" }}
-            onClick={() => onNavigate("home")}
+            onClick={() => onNavigate?.("home")}
           >
             <img
               src={logo}
@@ -427,7 +427,7 @@ export default function SignupPage({ onNavigate, onLogin }) {
             }}
           >
             Already have an account?{" "}
-            <span className="auth-link" onClick={() => onNavigate("login")}>
+            <span className="auth-link" onClick={() => onNavigate?.("login")}>
               Login →
             </span>
           </p>
@@ -718,7 +718,7 @@ export default function SignupPage({ onNavigate, onLogin }) {
                 color: "#aaa",
                 cursor: "pointer",
               }}
-              onClick={() => onNavigate("home")}
+              onClick={() => onNavigate?.("home")}
             >
               ← Back to Homepage
             </span>

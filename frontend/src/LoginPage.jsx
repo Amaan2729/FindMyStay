@@ -1,7 +1,7 @@
 import { useState } from "react";
 import logo from "./assets/bd.png";
 
-export default function LoginPage({ onNavigate, onLogin }) {
+export default function LoginPage({ onLogin, onAdminLogin, onNavigate }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -10,6 +10,13 @@ export default function LoginPage({ onNavigate, onLogin }) {
 
   const handleLogin = async () => {
   setError("");
+
+  const ADMIN_EMAIL = "admin@findmystay.com";
+  const ADMIN_PASSWORD = "Admin@123";
+  if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+    onAdminLogin?.({ email });
+    return;
+  }
 
   if (!email || !password) {
     setError("Please fill in all fields.");
@@ -36,7 +43,8 @@ export default function LoginPage({ onNavigate, onLogin }) {
     }
 
     setLoading(false);
-    onLogin(data.user);
+    onLogin(data.user || { email });
+    if (onNavigate) onNavigate("home");
 
   } catch (error) {
     console.error(error);
@@ -143,7 +151,7 @@ export default function LoginPage({ onNavigate, onLogin }) {
         >
           <div
             style={{ cursor: "pointer", marginBottom: "48px" }}
-            onClick={() => onNavigate("home")}
+            onClick={() => onNavigate?.("home")}
           >
             <img
               src={logo}
@@ -261,7 +269,7 @@ export default function LoginPage({ onNavigate, onLogin }) {
             }}
           >
             Don't have an account?{" "}
-            <span className="auth-link" onClick={() => onNavigate("signup")}>
+            <span className="auth-link" onClick={() => onNavigate?.("signup") }>
               Sign up free →
             </span>
           </p>
@@ -437,7 +445,7 @@ export default function LoginPage({ onNavigate, onLogin }) {
                 color: "#aaa",
                 cursor: "pointer",
               }}
-              onClick={() => onNavigate("home")}
+              onClick={() => onNavigate?.("home")}
             >
               ← Back to Homepage
             </span>

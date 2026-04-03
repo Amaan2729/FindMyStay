@@ -1,6 +1,7 @@
+import React from "react";
 import StarRating from "./StarRating";
 
-export default function FeaturedHotelsSection({ featuredHotels, openBooking, filters, activeFilter, setActiveFilter }) {
+export default React.memo(function FeaturedHotelsSection({ featuredHotels, openBooking, filters, activeFilter, setActiveFilter }) {
   return (
     <section style={{ padding: "20px 5% 80px", background: "#faf8f5" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
@@ -48,7 +49,30 @@ export default function FeaturedHotelsSection({ featuredHotels, openBooking, fil
                     <span style={{ fontFamily: "'Playfair Display'", fontWeight: 700, fontSize: "20px" }}>₹{h.price.toLocaleString()}</span>
                     <span style={{ fontFamily: "'DM Sans'", fontSize: "12px", color: "#aaa" }}>/night</span>
                   </div>
-                  <button className="book-btn" onClick={() => openBooking(h)}>
+                  <button 
+                    type="button"
+                    className="book-btn" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log("✅ Book Now clicked for:", h.name);
+                      openBooking(h);
+                    }}
+                    style={{
+                      fontFamily: "'DM Sans'",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      padding: "10px 20px",
+                      borderRadius: "8px",
+                      border: "none",
+                      background: "#c9a96e",
+                      color: "white",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = "#b8954c"}
+                    onMouseLeave={(e) => e.target.style.background = "#c9a96e"}
+                  >
                     Book Now
                   </button>
                 </div>
@@ -59,4 +83,4 @@ export default function FeaturedHotelsSection({ featuredHotels, openBooking, fil
       </div>
     </section>
   );
-}
+});

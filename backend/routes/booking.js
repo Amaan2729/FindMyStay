@@ -110,6 +110,21 @@ router.post("/book", async (req, res) => {
 
     await t.commit();
 
+    // Emit real-time notification for all connected clients
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("bookingUpdate", {
+        bookingId: booking.id,
+        hotelName: booking.hotelName,
+        user: booking.name,
+        rooms: booking.rooms,
+        checkin: booking.checkin,
+        checkout: booking.checkout,
+        totalPrice: booking.totalPrice,
+        createdAt: booking.createdAt,
+      });
+    }
+
     res.json({
       message: "Booking successful",
       booking,
@@ -121,6 +136,15 @@ router.post("/book", async (req, res) => {
   }
 });
 
+// Admin endpoint: get all bookings
+router.get("/admin/bookings", async (req, res) => {
+  try {
+    const bookings = await Booking.findAll({ order: [["createdAt", "DESC"]] });
+    res.json(bookings);
+  } catch (err) {
+    res.status(500).json({ error: "Unable to fetch bookings" });
+  }
+});
 
 // ✅ EXPORT
 module.exports = router;

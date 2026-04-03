@@ -182,6 +182,33 @@ export default function GlobalStyle() {
         backdrop-filter: blur(4px);
       }
       .wishlist-btn:hover { transform: scale(1.15); }
+      .hero-glow {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: radial-gradient(circle at 20% 30%, rgba(201,169,110,0.2), transparent 45%), radial-gradient(circle at 80% 20%, rgba(233,196,110,0.14), transparent 39%);
+        pointer-events: none;
+        opacity: 0.85;
+      }
+      .hero-area::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(120deg, rgba(29, 42, 57, 0.12), rgba(20, 19, 21, 0.5));
+        pointer-events: none;
+      }
+      .dark-stats { border-radius: 20px; box-shadow: 0 20px 48px rgba(0,0,0,0.35); }
+      .stat-glass { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: 14px; backdrop-filter: blur(8px); padding: 18px 22px; min-width: 150px; }
+      .stat-glass:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+      .section-heading {
+        font-family: 'Playfair Display', serif;
+        font-weight: 900;
+        color: #1a1a1a;
+        margin-bottom: 12px;
+        line-height: 1.1;
+      }
+      .section-subtitle { color: #5a5a5a; }
+      .card-glow { box-shadow: 0 16px 40px rgba(0,0,0,0.12); transition: transform 0.3s, box-shadow 0.3s; }
+      .card-glow:hover { transform: translateY(-4px); box-shadow: 0 22px 52px rgba(0,0,0,0.2); }
       .offer-card {
         background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
         border-radius: 20px;
