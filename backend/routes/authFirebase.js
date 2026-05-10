@@ -100,4 +100,21 @@ router.get("/me", verifyFirebaseToken, async (req, res) => {
   }
 });
 
+// Admin endpoint: get list of all users
+router.get("/users", async (req, res) => {
+  try {
+    const users = await User.findAll({ attributes: ["id", "name", "email"] });
+    const usersWithRole = users.map((user) => {
+      const safeUser = user.toJSON ? user.toJSON() : user;
+      const role = safeUser.email === (process.env.ADMIN_EMAIL || "admin@findmystay.com") ? "Admin" : "Guest";
+      return { ...safeUser, role };
+    });
+
+    res.json(usersWithRole);
+  } catch (error) {
+    console.error("Get users error:", error);
+    res.status(500).json({ error: "Unable to fetch users" });
+  }
+});
+
 module.exports = router;

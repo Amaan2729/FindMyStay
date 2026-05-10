@@ -228,6 +228,7 @@ const sendWelcomeEmail = async (userData) => {
 };
 
 module.exports = {
+  createTransporter,
   sendBookingConfirmation,
   sendAdminNotification,
   sendPasswordResetEmail,
