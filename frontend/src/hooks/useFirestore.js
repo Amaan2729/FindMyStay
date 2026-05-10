@@ -4,6 +4,7 @@ import {
   subscribeToUserBookings,
   subscribeToUserNotifications,
   subscribeToHotel,
+  subscribeToHotelReviews,
 } from "../services/firestoreService";
 
 // Hook for real-time hotels
@@ -118,4 +119,34 @@ export const useSingleHotel = (hotelId) => {
   }, [hotelId]);
 
   return { hotel, loading, error };
+};
+
+// Hook for real-time hotel reviews
+export const useHotelReviews = (hotelId) => {
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!hotelId) {
+      setReviews([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const unsubscribe = subscribeToHotelReviews(hotelId, (data) => {
+        setReviews(data);
+        setLoading(false);
+      });
+
+      return () => unsubscribe();
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  }, [hotelId]);
+
+  return { reviews, loading, error };
 };

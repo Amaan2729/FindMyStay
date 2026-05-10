@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { io } from "socket.io-client";
-const socket = io("http://localhost:5000"); // Socket connection
+import { addBooking as addFirestoreBooking, addNotification as addFirestoreNotification } from "./services/firestoreService";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+const socket = io("http://localhost:5000"); // Socket connection
 
 // --- Sample hotel data for standalone demo ---
 const demoHotel = {
@@ -134,6 +136,34 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
 
     setLoading(true);
 
+    const userId = form.email.trim().toLowerCase() || "guest";
+    const bookingPayload = {
+      hotelId: hotel.id || hotel.name,
+      hotelName: hotel.name,
+      checkin: form.checkin,
+      checkout: form.checkout,
+      guests: Number(form.guests),
+      rooms: Number(form.rooms),
+      totalPrice: total,
+      email: form.email,
+      phone: form.phone,
+    };
+
+    let firestoreBooking;
+    try {
+      firestoreBooking = await addFirestoreBooking(bookingPayload, userId);
+      await addFirestoreNotification(userId, {
+        title: "✅ Booking Confirmed",
+        message: `Your booking at ${hotel.name} is confirmed for ${form.rooms} room(s).`,
+        type: "booking",
+        bookingId: firestoreBooking.id,
+      });
+      toast.success("Booking saved to Firestore successfully!");
+    } catch (firestoreError) {
+      console.error("Firestore booking error:", firestoreError);
+      toast.error("Firestore booking failed, please check configuration.");
+    }
+
     try {
       const res = await fetch("http://localhost:5000/api/book", {
         method: "POST",
@@ -153,26 +183,21 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
 
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Booking failed");
-        setLoading(false);
-        return;
+        console.warn("Backend booking failed:", data.error || "Booking failed");
+      } else {
+        const finalBookingId = data.bookingId || bookingId;
+        socket.emit("newBooking", {
+          bookingId: finalBookingId,
+          hotelName: hotel.name,
+          user: form.name,
+          total,
+        });
       }
-
-      const finalBookingId = data.bookingId || bookingId;
-
-      socket.emit("newBooking", {
-        bookingId: finalBookingId,
-        hotelName: hotel.name,
-        user: form.name,
-        total,
-      });
-
-      setStep(3);
     } catch (err) {
-      console.error("Booking error:", err);
-      alert("Booking failed. Check backend.");
+      console.warn("Backend request failed:", err);
     } finally {
       setLoading(false);
+      setStep(3);
     }
   };
 
@@ -199,7 +224,7 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
           setAvailableRooms(0);
         });
     }
-  }, [form.checkin, form.checkout]);
+  }, [form.checkin, form.checkout, hotel.name]);
 
   useEffect(() => {
     // Confirm connection

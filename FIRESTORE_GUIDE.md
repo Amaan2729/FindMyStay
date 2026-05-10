@@ -60,6 +60,19 @@ Firestore is a real-time cloud database. Changes are instantly synced across all
 }
 ```
 
+### 4. **reviews** Collection
+```javascript
+{
+  id: "review123",
+  hotelId: "hotel123",
+  userId: "user456",
+  userName: "Aman",
+  rating: 5,
+  comment: "Great stay, excellent service!",
+  createdAt: Timestamp
+}
+```
+
 ## Usage Examples
 
 ### ✅ Example 1: Display All Hotels (Real-time)

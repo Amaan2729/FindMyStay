@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useHotels, useUserBookings, useUserNotifications } from "../hooks/useFirestore";
-import { addBooking, addNotification } from "../services/firestoreService";
+import { useHotels, useUserBookings, useUserNotifications, useHotelReviews } from "../hooks/useFirestore";
+import { addBooking, addNotification, addReview } from "../services/firestoreService";
 
 function FirestoreDemoPage() {
   const { hotels, loading: hotelsLoading } = useHotels();
@@ -14,6 +14,9 @@ function FirestoreDemoPage() {
     guests: 1,
     rooms: 1,
   });
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const { reviews, loading: reviewsLoading } = useHotelReviews(selectedHotel?.id);
 
   const handleBooking = async () => {
     if (!selectedHotel || !bookingData.checkin || !bookingData.checkout) {
@@ -22,20 +25,18 @@ function FirestoreDemoPage() {
     }
 
     try {
-      // Create booking
       const booking = await addBooking(
         {
           hotelId: selectedHotel.id,
           hotelName: selectedHotel.name,
           ...bookingData,
-          totalPrice: selectedHotel.price * parseInt(bookingData.rooms),
+          totalPrice: selectedHotel.price * parseInt(bookingData.rooms, 10),
           email: "user@example.com",
           phone: "9876543210",
         },
         userId
       );
 
-      // Send notification
       await addNotification(userId, {
         title: "✅ Booking Confirmed!",
         message: `Your booking at ${selectedHotel.name} for ${bookingData.rooms} room(s) is confirmed!`,
@@ -53,6 +54,30 @@ function FirestoreDemoPage() {
       });
     } catch (error) {
       alert("Booking failed: " + error.message);
+    }
+  };
+
+  const handleReviewSubmit = async () => {
+    if (!selectedHotel) {
+      alert("Please select a hotel first.");
+      return;
+    }
+    if (!reviewComment.trim()) {
+      alert("Please write a review comment.");
+      return;
+    }
+
+    try {
+      await addReview(selectedHotel.id, userId, {
+        rating: reviewRating,
+        comment: reviewComment,
+        userName: "Demo User",
+      });
+      setReviewRating(5);
+      setReviewComment("");
+      alert("Review submitted successfully!");
+    } catch (error) {
+      alert("Review failed: " + error.message);
     }
   };
 
@@ -119,72 +144,146 @@ function FirestoreDemoPage() {
 
       {/* BOOKING FORM */}
       {selectedHotel && (
-        <div style={{ background: "#faf8f5", padding: "20px", borderRadius: "8px", marginBottom: "20px" }}>
-          <h2>📅 Book {selectedHotel.name}</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            <input
-              type="date"
-              value={bookingData.checkin}
-              onChange={(e) => setBookingData({ ...bookingData, checkin: e.target.value })}
-              placeholder="Check-in"
-              style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
-            />
-            <input
-              type="date"
-              value={bookingData.checkout}
-              onChange={(e) => setBookingData({ ...bookingData, checkout: e.target.value })}
-              placeholder="Check-out"
-              style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
-            />
-            <input
-              type="number"
-              min="1"
-              value={bookingData.guests}
-              onChange={(e) => setBookingData({ ...bookingData, guests: parseInt(e.target.value) })}
-              placeholder="Guests"
-              style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
-            />
-            <input
-              type="number"
-              min="1"
-              value={bookingData.rooms}
-              onChange={(e) => setBookingData({ ...bookingData, rooms: parseInt(e.target.value) })}
-              placeholder="Rooms"
-              style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
-            />
+        <>
+          <div style={{ background: "#faf8f5", padding: "20px", borderRadius: "8px", marginBottom: "20px" }}>
+            <h2>📅 Book {selectedHotel.name}</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              <input
+                type="date"
+                value={bookingData.checkin}
+                onChange={(e) => setBookingData({ ...bookingData, checkin: e.target.value })}
+                placeholder="Check-in"
+                style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
+              />
+              <input
+                type="date"
+                value={bookingData.checkout}
+                onChange={(e) => setBookingData({ ...bookingData, checkout: e.target.value })}
+                placeholder="Check-out"
+                style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
+              />
+              <input
+                type="number"
+                min="1"
+                value={bookingData.guests}
+                onChange={(e) => setBookingData({ ...bookingData, guests: parseInt(e.target.value) })}
+                placeholder="Guests"
+                style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
+              />
+              <input
+                type="number"
+                min="1"
+                value={bookingData.rooms}
+                onChange={(e) => setBookingData({ ...bookingData, rooms: parseInt(e.target.value) })}
+                placeholder="Rooms"
+                style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ddd" }}
+              />
+            </div>
+            <p style={{ marginTop: "10px", fontSize: "18px", fontWeight: "bold" }}>
+              Total: ₹{selectedHotel.price * bookingData.rooms}
+            </p>
+            <button
+              onClick={handleBooking}
+              style={{
+                background: "#d4a574",
+                color: "white",
+                padding: "10px 20px",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "16px",
+                marginRight: "10px",
+              }}
+            >
+              ✅ Confirm Booking
+            </button>
+            <button
+              onClick={() => setSelectedHotel(null)}
+              style={{
+                background: "#ccc",
+                padding: "10px 20px",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "16px",
+              }}
+            >
+              ❌ Cancel
+            </button>
           </div>
-          <p style={{ marginTop: "10px", fontSize: "18px", fontWeight: "bold" }}>
-            Total: ₹{selectedHotel.price * bookingData.rooms}
-          </p>
-          <button
-            onClick={handleBooking}
-            style={{
-              background: "#d4a574",
-              color: "white",
-              padding: "10px 20px",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "16px",
-              marginRight: "10px",
-            }}
-          >
-            ✅ Confirm Booking
-          </button>
-          <button
-            onClick={() => setSelectedHotel(null)}
-            style={{
-              background: "#ccc",
-              padding: "10px 20px",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "16px",
-            }}
-          >
-            ❌ Cancel
-          </button>
-        </div>
+
+          <div style={{ background: "#fff8e1", padding: "20px", borderRadius: "8px", marginBottom: "20px" }}>
+            <h3>📝 Reviews for {selectedHotel.name}</h3>
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "15px" }}>
+              <label style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                Rating
+                <select
+                  value={reviewRating}
+                  onChange={(e) => setReviewRating(Number(e.target.value))}
+                  style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ddd", marginTop: "5px" }}
+                >
+                  {[5, 4, 3, 2, 1].map((value) => (
+                    <option key={value} value={value}>
+                      {value} star{value > 1 ? "s" : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", flex: 3 }}>
+                Comment
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  rows={3}
+                  style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ddd", marginTop: "5px" }}
+                />
+              </label>
+            </div>
+            <button
+              onClick={handleReviewSubmit}
+              style={{
+                background: "#ffa000",
+                color: "white",
+                padding: "10px 20px",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "16px",
+              }}
+            >
+              ✍️ Submit Review
+            </button>
+
+            <div style={{ marginTop: "20px" }}>
+              <h4>Latest Reviews</h4>
+              {reviewsLoading ? (
+                <p>Loading reviews...</p>
+              ) : reviews.length === 0 ? (
+                <p>No reviews yet. Be the first to review this hotel.</p>
+              ) : (
+                <div style={{ display: "grid", gap: "10px" }}>
+                  {reviews.map((review) => (
+                    <div
+                      key={review.id}
+                      style={{
+                        background: "#fff",
+                        border: "1px solid #ffd54f",
+                        borderRadius: "6px",
+                        padding: "12px",
+                      }}
+                    >
+                      <strong>{review.userName}</strong> — ⭐ {review.rating}
+                      <p style={{ margin: "8px 0 0" }}>{review.comment}</p>
+                      <small style={{ color: "#666" }}>
+                        {review.createdAt?.toDate ? review.createdAt.toDate().toLocaleString() : "Unknown"}
+                      </small>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
       )}
 
       {/* MY BOOKINGS SECTION */}

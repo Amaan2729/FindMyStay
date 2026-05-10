@@ -63,6 +63,13 @@ About Page
   * Booking success
   * Booking failure
 
+### 📧 Email Notifications
+
+* Automated booking confirmation emails to customers
+* Admin notification emails for new bookings
+* Welcome emails for new user registrations
+* Professional HTML email templates
+
 # 3️⃣ Technology Stack
 
 ### 🎨 Frontend
@@ -141,6 +148,22 @@ cd FindMyStay
 ### 📦 Backend Setup
 cd backend
 npm install
+
+### 📧 Email Setup (Optional)
+For email notifications, configure your Gmail SMTP:
+
+1. Enable 2FA on your Gmail account
+2. Generate an app password
+3. Copy `.env.example` to `.env` and add:
+```
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-16-char-app-password
+ADMIN_EMAIL=admin@yourdomain.com
+```
+
+See `EMAIL_SETUP.md` for detailed instructions.
 
 ### 🎨 Frontend Setup
 cd frontend

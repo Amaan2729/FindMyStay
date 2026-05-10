@@ -81,16 +81,31 @@ export const deleteHotel = async (hotelId) => {
 
 // ==================== BOOKINGS ====================
 
+const normalizeDateValue = (value) => {
+  if (!value) return null;
+  if (typeof value === "string") {
+    return Timestamp.fromDate(new Date(value));
+  }
+  if (value instanceof Date) {
+    return Timestamp.fromDate(value);
+  }
+  return value;
+};
+
 export const addBooking = async (bookingData, userId) => {
   try {
-    const docRef = await addDoc(collection(db, "bookings"), {
+    const normalizedBooking = {
       ...bookingData,
+      checkin: normalizeDateValue(bookingData.checkin),
+      checkout: normalizeDateValue(bookingData.checkout),
       userId,
       status: "pending",
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
-    });
-    return { id: docRef.id, ...bookingData };
+    };
+
+    const docRef = await addDoc(collection(db, "bookings"), normalizedBooking);
+    return { id: docRef.id, ...normalizedBooking };
   } catch (error) {
     console.error("Error adding booking:", error);
     throw error;
@@ -149,6 +164,58 @@ export const cancelBooking = async (bookingId) => {
     });
   } catch (error) {
     console.error("Error cancelling booking:", error);
+    throw error;
+  }
+};
+
+// ==================== REVIEWS ====================
+
+export const addReview = async (hotelId, userId, reviewData) => {
+  try {
+    const docRef = await addDoc(collection(db, "reviews"), {
+      hotelId,
+      userId,
+      userName: reviewData.userName || "Guest",
+      rating: Number(reviewData.rating) || 0,
+      comment: reviewData.comment || "",
+      createdAt: Timestamp.now(),
+    });
+    return { id: docRef.id, hotelId, userId, ...reviewData };
+  } catch (error) {
+    console.error("Error adding review:", error);
+    throw error;
+  }
+};
+
+export const getHotelReviews = async (hotelId) => {
+  try {
+    const q = query(
+      collection(db, "reviews"),
+      where("hotelId", "==", hotelId),
+      orderBy("createdAt", "desc")
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error("Error fetching hotel reviews:", error);
+    throw error;
+  }
+};
+
+export const subscribeToHotelReviews = (hotelId, callback) => {
+  try {
+    const q = query(
+      collection(db, "reviews"),
+      where("hotelId", "==", hotelId),
+      orderBy("createdAt", "desc")
+    );
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const reviews = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      callback(reviews);
+    });
+    return unsubscribe;
+  } catch (error) {
+    console.error("Error subscribing to hotel reviews:", error);
     throw error;
   }
 };
