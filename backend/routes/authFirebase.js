@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
 const { verifyFirebaseToken } = require("../middleware/firebaseAuth");
+const { sendWelcomeEmail } = require("../services/emailService");
 
 // Sign up route - Firebase
 router.post("/signup", verifyFirebaseToken, async (req, res) => {
@@ -21,6 +22,16 @@ router.post("/signup", verifyFirebaseToken, async (req, res) => {
       name,
       firebaseUid: uid, // Store Firebase UID
     });
+
+    // Send welcome email (don't fail signup if email fails)
+    try {
+      await sendWelcomeEmail({
+        email: user.email,
+        name: user.name,
+      });
+    } catch (emailError) {
+      console.warn("Failed to send welcome email:", emailError.message);
+    }
 
     res.status(201).json({
       message: "User created successfully!",

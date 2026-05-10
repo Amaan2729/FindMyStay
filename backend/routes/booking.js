@@ -5,6 +5,7 @@ const Booking = require("../models/Booking");
 const Hotel = require("../models/index").Hotel;
 const sequelize = require("../config/db");
 const { Op } = require("sequelize");
+const { sendBookingConfirmation, sendAdminNotification } = require("../services/emailService");
 
 const TOTAL_ROOMS = 10;
 
@@ -109,6 +110,25 @@ router.post("/book", async (req, res) => {
     const booking = await Booking.create(req.body, { transaction: t });
 
     await t.commit();
+
+    // Send confirmation email to customer
+    try {
+      await sendBookingConfirmation({
+        ...booking.toJSON(),
+        email: req.body.email,
+      });
+    } catch (emailError) {
+      console.warn("Failed to send booking confirmation email:", emailError.message);
+      // Don't fail the booking if email fails
+    }
+
+    // Send notification email to admin
+    try {
+      await sendAdminNotification(booking.toJSON());
+    } catch (emailError) {
+      console.warn("Failed to send admin notification email:", emailError.message);
+      // Don't fail the booking if email fails
+    }
 
     // Emit real-time notification for all connected clients
     const io = req.app.get("io");
