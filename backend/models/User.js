@@ -15,7 +15,12 @@ const User = sequelize.define(
     },
     password: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: true // Optional for Firebase auth users
+    },
+    firebaseUid: {
+      type: DataTypes.STRING,
+      //unique: true,
+      allowNull: true // Optional, only for Firebase auth users
     }
   },
   {

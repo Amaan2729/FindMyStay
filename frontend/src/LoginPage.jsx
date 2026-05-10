@@ -1,5 +1,6 @@
 import { useState } from "react";
 import logo from "./assets/bd.png";
+import { signIn, signInWithGoogle, signInWithGitHub, resetPassword } from "./utils/authService";
 
 export default function LoginPage({ onLogin, onAdminLogin, onNavigate }) {
   const [email, setEmail] = useState("");
@@ -7,51 +8,95 @@ export default function LoginPage({ onLogin, onAdminLogin, onNavigate }) {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetMessage, setResetMessage] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleLogin = async () => {
-  setError("");
+    setError("");
 
-  const ADMIN_EMAIL = "admin@findmystay.com";
-  const ADMIN_PASSWORD = "Admin@123";
-  if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-    onAdminLogin?.({ email });
-    return;
-  }
-
-  if (!email || !password) {
-    setError("Please fill in all fields.");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const response = await fetch("http://localhost:5000/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      setError(data.message || "Login failed");
-      setLoading(false);
+    const ADMIN_EMAIL = "admin@findmystay.com";
+    const ADMIN_PASSWORD = "Admin@123";
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      onAdminLogin?.({ email });
       return;
     }
 
-    setLoading(false);
-    onLogin(data.user || { email });
-    if (onNavigate) onNavigate("home");
+    if (!email || !password) {
+      setError("Please fill in all fields.");
+      return;
+    }
 
-  } catch (error) {
-    console.error(error);
-    setError("Failed to connect to server");
-    setLoading(false);
-  }
-};
+    setLoading(true);
+
+    try {
+      const { user } = await signIn(email, password);
+      setLoading(false);
+      onLogin?.(user || { email });
+      if (onNavigate) onNavigate("home");
+      window.history.replaceState(null, "", "/");
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Login failed");
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError("");
+    setLoading(true);
+
+    try {
+      const { user } = await signInWithGoogle();
+      setLoading(false);
+      onLogin?.(user || { email: user.email });
+      if (onNavigate) onNavigate("home");
+      window.history.replaceState(null, "", "/");
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Google login failed");
+      setLoading(false);
+    }
+  };
+
+  const handleGitHubLogin = async () => {
+    setError("");
+    setLoading(true);
+
+    try {
+      const { user } = await signInWithGitHub();
+      setLoading(false);
+      onLogin?.(user || { email: user.email });
+      if (onNavigate) onNavigate("home");
+      window.history.replaceState(null, "", "/");
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "GitHub login failed");
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    setError("");
+    setResetMessage("");
+
+    if (!resetEmail) {
+      setError("Please enter your email to reset password.");
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      await resetPassword(resetEmail);
+      setResetMessage("Password reset link sent. Check your email.");
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Failed to send reset link.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   return (
     <div
@@ -283,7 +328,7 @@ export default function LoginPage({ onLogin, onAdminLogin, onNavigate }) {
               marginBottom: "24px",
             }}
           >
-            <button className="social-btn">
+            <button type="button" className="social-btn" onClick={handleGoogleLogin} disabled={loading}>
               <img
                 src="https://www.google.com/favicon.ico"
                 width={16}
@@ -291,9 +336,9 @@ export default function LoginPage({ onLogin, onAdminLogin, onNavigate }) {
               />
               Google
             </button>
-            <button className="social-btn">
-              <span style={{ fontSize: "16px" }}>📘</span>
-              Facebook
+            <button type="button" className="social-btn" onClick={handleGitHubLogin} disabled={loading}>
+              <span style={{ fontSize: "16px" }}>🐙</span>
+              GitHub
             </button>
           </div>
 
@@ -391,10 +436,73 @@ export default function LoginPage({ onLogin, onAdminLogin, onNavigate }) {
           </div>
 
           <div style={{ textAlign: "right", marginBottom: "24px" }}>
-            <span className="auth-link" style={{ fontSize: "13px" }}>
+            <span className="auth-link" style={{ fontSize: "13px" }} onClick={() => {
+              setShowReset(true);
+              setResetEmail(email);
+              setError("");
+              setResetMessage("");
+            }}>
               Forgot password?
             </span>
           </div>
+
+          {showReset && (
+            <div
+              style={{
+                background: "#f8f7f3",
+                border: "1px solid #e8e0d5",
+                borderRadius: "14px",
+                padding: "18px",
+                marginBottom: "24px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "16px",
+                }}
+              >
+                <div>
+                  <strong>Reset password</strong>
+                  <p style={{ margin: "6px 0 0", fontSize: "13px", color: "#666" }}>
+                    Enter your email and we will send a reset link.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="auth-link"
+                  onClick={() => {
+                    setShowReset(false);
+                    setError("");
+                    setResetMessage("");
+                  }}
+                  style={{ background: "none", border: "none", padding: 0, fontSize: "13px" }}
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <input
+                className="auth-input"
+                type="email"
+                placeholder="your@email.com"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                disabled={resetLoading}
+                style={{ marginBottom: "12px" }}
+              />
+              <button
+                type="button"
+                className="auth-btn"
+                onClick={handlePasswordReset}
+                disabled={resetLoading}
+              >
+                {resetLoading ? <span className="spinner" /> : "Send reset link"}
+              </button>
+            </div>
+          )}
 
           {error && (
             <div
@@ -410,6 +518,23 @@ export default function LoginPage({ onLogin, onAdminLogin, onNavigate }) {
               }}
             >
               ⚠️ {error}
+            </div>
+          )}
+
+          {resetMessage && (
+            <div
+              style={{
+                background: "#ecf7ed",
+                border: "1px solid #b8dfbc",
+                borderRadius: "8px",
+                padding: "10px 14px",
+                marginBottom: "16px",
+                fontFamily: "'DM Sans'",
+                fontSize: "13px",
+                color: "#256029",
+              }}
+            >
+              ✅ {resetMessage}
             </div>
           )}
 

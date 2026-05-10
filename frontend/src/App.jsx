@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { BrowserRouter as Router } from "react-router-dom";
 import { io } from "socket.io-client";
+import { AuthProvider } from "./context/AuthContext";
 import DestinationPage from "./DestinationPage";
 import LoginPage from "./LoginPage";
 import SignupPage from "./Signuppage";
@@ -305,10 +306,11 @@ export default function FindMyStay() {
   }
 
   return (
-    <Router>
-      <div style={{ fontFamily: "'Playfair Display', Georgia, serif", background: "#faf8f5", minHeight: "100vh", color: "#1a1a1a" }}>
-        <GlobalStyle />
-      <NavBar
+    <AuthProvider>
+      <Router>
+        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", background: "#faf8f5", minHeight: "100vh", color: "#1a1a1a" }}>
+          <GlobalStyle />
+        <NavBar
         scrolled={scrolled}
         logo={logo}
         user={user}
@@ -377,6 +379,7 @@ export default function FindMyStay() {
       <SiteFooter logo={logo} onAdminAccess={() => setPage("admin-login")} />
       <TravelBot />
       </div>
-    </Router>
+      </Router>
+    </AuthProvider>
   );
 }

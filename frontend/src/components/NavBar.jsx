@@ -163,10 +163,10 @@ export default function NavBar({
                   color: "white",
                 }}
               >
-                {user.name[0].toUpperCase()}
+                {(user.name || user.displayName || user.email || "U")[0].toUpperCase()}
               </div>
               <span style={{ fontFamily: "'DM Sans'", fontSize: "13px", fontWeight: 600, color: "white" }}>
-                Hi, {user.name}
+                Hi, {user.name || user.displayName || user.email?.split("@")[0] || "User"}
               </span>
             </div>
             <button

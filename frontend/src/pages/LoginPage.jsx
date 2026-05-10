@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { signIn } from "../utils/authService";
 import { toast } from "react-toastify";
 
-export default function AdminLogin({ onBack }) {
+export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -11,20 +11,21 @@ export default function AdminLogin({ onBack }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
     if (!email || !password) {
-      toast.error("Please fill in all fields.");
+      toast.error("Please fill in all fields");
       return;
     }
 
     setLoading(true);
     try {
       await signIn(email, password);
-      toast.success("Admin login successful!");
-      navigate("/admin");
-    } catch (err) {
-      console.error("Admin login error", err);
-      toast.error(err.message || "Invalid credentials");
+      toast.success("Login successful!");
+      navigate("/");
+    } catch (error) {
+      toast.error(error.message || "Login failed");
+      console.error("Login error:", error);
+    } finally {
       setLoading(false);
     }
   };
@@ -32,8 +33,9 @@ export default function AdminLogin({ onBack }) {
   return (
     <div style={{ minHeight: "100vh", background: "#faf8f5", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans', sans-serif" }}>
       <div style={{ maxWidth: 420, width: "100%", background: "white", boxShadow: "0 14px 48px rgba(0,0,0,0.14)", borderRadius: 20, padding: 34 }}>
-        <h2 style={{ margin: 0, marginBottom: 20, fontFamily: "'Playfair Display'", color: "#1a1a1a" }}>Admin Sign In</h2>
-        <p style={{ color: "#6b6b6b", marginBottom: 20 }}>Use admin credentials to enter dashboard.</p>
+        <h2 style={{ margin: 0, marginBottom: 20, fontFamily: "'Playfair Display'", color: "#1a1a1a" }}>Sign In</h2>
+        <p style={{ color: "#6b6b6b", marginBottom: 20 }}>Welcome back to FindMyStay</p>
+        
         <form onSubmit={handleSubmit}>
           <label style={{ display: "block", marginBottom: 10, fontSize: 14 }}>Email</label>
           <input 
@@ -41,7 +43,7 @@ export default function AdminLogin({ onBack }) {
             type="email"
             value={email} 
             onChange={(e) => setEmail(e.target.value)} 
-            placeholder="admin@findmystay.com"
+            placeholder="your@email.com"
             disabled={loading}
           />
 
@@ -64,14 +66,9 @@ export default function AdminLogin({ onBack }) {
           </button>
         </form>
 
-        {onBack && (
-          <button 
-            onClick={onBack}
-            style={{ width: "100%", marginTop: 12, padding: "12px 16px", background: "transparent", color: "#d4a574", border: "1px solid #d4a574", borderRadius: 8, fontWeight: 500, cursor: "pointer" }}
-          >
-            Go Back
-          </button>
-        )}
+        <p style={{ textAlign: "center", marginTop: 20, color: "#6b6b6b" }}>
+          Don't have an account? <a href="/signup" style={{ color: "#d4a574", textDecoration: "none" }}>Sign up</a>
+        </p>
       </div>
     </div>
   );

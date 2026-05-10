@@ -1,5 +1,6 @@
 import { useState } from "react";
 import logo from "./assets/bd.png";
+import { signUp, signInWithGitHub, signInWithGoogle } from "./utils/authService";
 
 export default function SignupPage({ onNavigate }) {
   const [name, setName] = useState("");
@@ -51,37 +52,44 @@ export default function SignupPage({ onNavigate }) {
 
   try {
     setLoading(true);
-
-    const response = await fetch("http://localhost:5000/api/auth/signup", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name,
-        email,
-        password,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Signup failed");
-    }
-
+    await signUp(email, password, name);
     setLoading(false);
     setStep(2);
-
   } catch (err) {
     setLoading(false);
-    setError(err.message);
+    setError(err.message || "Signup failed");
   }
 };
 
-  
+  const handleGoogleLogin = async () => {
+    setError("");
+    setLoading(true);
 
-  
+    try {
+      await signInWithGoogle();
+      setLoading(false);
+      onNavigate?.("home");
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Google login failed");
+      setLoading(false);
+    }
+  };
+
+  const handleGitHubLogin = async () => {
+    setError("");
+    setLoading(true);
+
+    try {
+      await signInWithGitHub();
+      setLoading(false);
+      onNavigate?.("home");
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "GitHub login failed");
+      setLoading(false);
+    }
+  };
 
   if (step === 2) {
     return (
@@ -441,16 +449,17 @@ export default function SignupPage({ onNavigate }) {
               marginBottom: "22px",
             }}
           >
-            <button className="social-btn">
+            <button type="button" className="social-btn" onClick={handleGitHubLogin} disabled={loading}>
+              <span style={{ fontSize: "16px" }}>🐙</span>
+              GitHub
+            </button>
+            <button type="button" className="social-btn" onClick={handleGoogleLogin} disabled={loading}>
               <img
                 src="https://www.google.com/favicon.ico"
                 width={16}
                 alt="Google"
               />
               Google
-            </button>
-            <button className="social-btn">
-              <span style={{ fontSize: "16px" }}>📘</span>Facebook
             </button>
           </div>
 

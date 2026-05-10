@@ -1,4 +1,5 @@
  // Handles API routes, database connection, and real-time updates
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { createServer } = require("http");
@@ -12,6 +13,7 @@ const graphqlSchema = require("./graphql/schema");
 const graphqlRoot = require("./graphql/resolvers");
 
 const authRoutes = require("./routes/auth");
+const authFirebaseRoutes = require("./routes/authFirebase");
 const bookingRoutes = require("./routes/booking");
 
 const app = express();
@@ -28,7 +30,8 @@ app.get("/", (req, res) => {
 });
 
 // Routes
-app.use("/api/auth", authRoutes);
+// app.use("/api/auth", authRoutes); // Removed - using Firebase auth now
+app.use("/api/auth", authFirebaseRoutes);
 app.use("/api", bookingRoutes);
 
 app.use(
@@ -74,10 +77,20 @@ io.on("connection", (socket) => {
 });
 
 // Database sync and start 
-sequelize.sync().then(() => {
+const PORT = process.env.PORT || 5000;
 
-  httpServer.listen(5000, () => {
-    console.log("FindMyStay backend running on port 5000");
-  });
+sequelize.sync({ alter: true }).then(() => {
+  httpServer
+    .listen(PORT, () => {
+      console.log(`FindMyStay backend running on port ${PORT}`);
+    })
+    .on("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        console.error(`Port ${PORT} is already in use. Stop the process using that port or set PORT to a free port before retrying.`);
+      } else {
+        console.error("Server error:", err);
+      }
+      process.exit(1);
+    });
 });
 // testing commit
