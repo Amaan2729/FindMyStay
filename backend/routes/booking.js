@@ -111,23 +111,37 @@ router.post("/book", async (req, res) => {
 
     await t.commit();
 
+    const bookingData = {
+      ...booking.toJSON(),
+      email: req.body.email,
+      name: req.body.name || booking.name || "Guest",
+    };
+
+    const emailResults = {
+      customer: { success: false, error: null },
+      admin: { success: false, error: null },
+    };
+
     // Send confirmation email to customer
     try {
-      await sendBookingConfirmation({
-        ...booking.toJSON(),
-        email: req.body.email,
-      });
+      emailResults.customer = await sendBookingConfirmation(bookingData);
+      if (!emailResults.customer.success) {
+        console.warn("Booking confirmation failed:", emailResults.customer.error);
+      }
     } catch (emailError) {
+      emailResults.customer = { success: false, error: emailError.message };
       console.warn("Failed to send booking confirmation email:", emailError.message);
-      // Don't fail the booking if email fails
     }
 
     // Send notification email to admin
     try {
-      await sendAdminNotification(booking.toJSON());
+      emailResults.admin = await sendAdminNotification(bookingData);
+      if (!emailResults.admin.success) {
+        console.warn("Admin notification failed:", emailResults.admin.error);
+      }
     } catch (emailError) {
+      emailResults.admin = { success: false, error: emailError.message };
       console.warn("Failed to send admin notification email:", emailError.message);
-      // Don't fail the booking if email fails
     }
 
     // Emit real-time notification for all connected clients
@@ -148,6 +162,7 @@ router.post("/book", async (req, res) => {
     res.json({
       message: "Booking successful",
       booking,
+      emailResults,
     });
 
   } catch (err) {

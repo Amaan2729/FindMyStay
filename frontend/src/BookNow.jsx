@@ -141,6 +141,7 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
     const bookingPayload = {
       hotelId: hotel.id || hotel.name,
       hotelName: hotel.name,
+      name: form.name,
       checkin: form.checkin,
       checkout: form.checkout,
       guests: Number(form.guests),
