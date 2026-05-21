@@ -23,6 +23,8 @@ import SquadSection from "./components/SquadSection";
 import WhyChooseSection from "./components/WhyChooseSection";
 import SiteFooter from "./components/SiteFooter";
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
 const getInitialPage = () => {
   if (typeof window === "undefined") return "home";
   const path = window.location.pathname.replace("/", "");
@@ -113,7 +115,7 @@ export default function FindMyStay() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 sec timeout
         
-        const response = await fetch("http://localhost:5000/api/hotels", {
+        const response = await fetch(`${BACKEND_URL}/api/hotels`, {
           signal: controller.signal,
           headers: { "Content-Type": "application/json" }
         });
@@ -145,7 +147,7 @@ export default function FindMyStay() {
   }, []);
 
   useEffect(() => {
-    const socket = io("http://localhost:5000");
+    const socket = io(BACKEND_URL);
 
     socket.on("connect", () => {
       console.log("Socket connected in App", socket.id);

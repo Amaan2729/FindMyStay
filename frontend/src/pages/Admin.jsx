@@ -602,7 +602,7 @@ function UsersPage({ users, bookings, loading, error }) {
                 </table>
               </div>
             ) : (
-              <div className="state-msg">No user data. Connect your backend at <code>localhost:5000/api/auth/users</code></div>
+              <div className="state-msg">No user data. Connect your backend and verify the admin API endpoint.</div>
             )}
           </>
         )}
@@ -686,7 +686,7 @@ function BookingsPage({ bookings, loading, error }) {
               </table>
             </div>
           ) : (
-            <div className="state-msg">No booking data. Connect your backend at <code>localhost:5000/api/admin/bookings</code></div>
+            <div className="state-msg">No booking data. Connect your backend and verify the bookings API endpoint.</div>
           )
         )}
       </div>
@@ -747,6 +747,7 @@ function PlaceholderPage({ name }) {
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 export default function AdminDashboard({ onBack }) {
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   const [activePage, setActivePage] = useState("Overview");
   const [users, setUsers]           = useState([]);
   const [bookings, setBookings]     = useState([]);
@@ -769,8 +770,8 @@ export default function AdminDashboard({ onBack }) {
       setError("");
       try {
         const [usersRes, bookingsRes] = await Promise.all([
-          fetch("http://localhost:5000/api/auth/users"),
-          fetch("http://localhost:5000/api/admin/bookings"),
+          fetch(`${BACKEND_URL}/api/auth/users`),
+          fetch(`${BACKEND_URL}/api/admin/bookings`),
         ]);
         if (!usersRes.ok) throw new Error(`Users HTTP ${usersRes.status}`);
         if (!bookingsRes.ok) throw new Error(`Bookings HTTP ${bookingsRes.status}`);

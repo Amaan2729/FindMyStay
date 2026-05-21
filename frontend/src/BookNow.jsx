@@ -4,7 +4,8 @@ import { addBooking as addFirestoreBooking, addNotification as addFirestoreNotif
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const socket = io("http://localhost:5000"); // Socket connection
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const socket = io(BACKEND_URL); // Socket connection
 
 // --- Sample hotel data for standalone demo ---
 const demoHotel = {
@@ -165,7 +166,7 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/api/book", {
+      const res = await fetch(`${BACKEND_URL}/api/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -203,7 +204,7 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
 
   useEffect(() => {
     if (form.checkin && form.checkout) {
-      fetch("http://localhost:5000/api/check-availability", {
+      fetch(`${BACKEND_URL}/api/check-availability`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
