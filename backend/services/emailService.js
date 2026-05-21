@@ -30,6 +30,18 @@ const createTransporter = () => {
       user,
       pass,
     },
+    tls: {
+      rejectUnauthorized: false,
+    },
+    connectionTimeout: 10000,
+  });
+
+  transporter.verify((error, success) => {
+    if (error) {
+      console.error('❌ SMTP transporter verification failed:', error);
+    } else {
+      console.log('✅ SMTP transporter verified and ready to send messages');
+    }
   });
 
   return transporter;

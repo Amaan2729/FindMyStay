@@ -15,6 +15,7 @@ const graphqlRoot = require("./graphql/resolvers");
 const authRoutes = require("./routes/auth");
 const authFirebaseRoutes = require("./routes/authFirebase");
 const bookingRoutes = require("./routes/booking");
+const emailRoutes = require("./routes/email");
 
 const app = express();
 const httpServer = createServer(app);
@@ -39,6 +40,7 @@ app.get("/", (req, res) => {
 // app.use("/api/auth", authRoutes); // Removed - using Firebase auth now
 app.use("/api/auth", authFirebaseRoutes);
 app.use("/api", bookingRoutes);
+app.use("/api/email", emailRoutes);
 
 app.use(
   "/graphql",
