@@ -6,23 +6,21 @@ if (!process.env.EMAIL_USER) missingEnv.push('EMAIL_USER');
 if (!process.env.EMAIL_PASS) missingEnv.push('EMAIL_PASS');
 
 if (missingEnv.length > 0) {
-  console.error('❌ Email credentials are missing: ' + missingEnv.join(', '));
+  console.error('Email credentials are missing: ' + missingEnv.join(', '));
   console.error('Please copy backend/.env.example to backend/.env and set your EMAIL_USER and EMAIL_PASS values.');
   process.exit(1);
 }
 
-// Import email service AFTER env is loaded
 const {
+  assertEmailSent,
   sendBookingConfirmation,
   sendAdminNotification,
   sendWelcomeEmail,
 } = require('./services/emailService');
 
-// Test email functionality
 async function testEmails() {
-  console.log('🧪 Testing Email Functionality...\n');
+  console.log('Testing email functionality...\n');
 
-  // Test booking data
   const testBooking = {
     id: 'TEST-123',
     hotelName: 'Test Hotel',
@@ -43,31 +41,29 @@ async function testEmails() {
   };
 
   try {
-    console.log('📧 Sending booking confirmation email...');
-    const bookingResult = await sendBookingConfirmation(testBooking);
-    console.log('✅ Booking confirmation:', bookingResult.success ? 'Sent' : 'Failed');
+    console.log('Sending booking confirmation email...');
+    assertEmailSent(await sendBookingConfirmation(testBooking), 'Booking confirmation');
+    console.log('Booking confirmation: Sent');
 
-    console.log('📧 Sending admin notification email...');
-    const adminResult = await sendAdminNotification(testBooking);
-    console.log('✅ Admin notification:', adminResult.success ? 'Sent' : 'Failed');
+    console.log('Sending admin notification email...');
+    assertEmailSent(await sendAdminNotification(testBooking), 'Admin notification');
+    console.log('Admin notification: Sent');
 
-    console.log('📧 Sending welcome email...');
-    const welcomeResult = await sendWelcomeEmail(testUser);
-    console.log('✅ Welcome email:', welcomeResult.success ? 'Sent' : 'Failed');
+    console.log('Sending welcome email...');
+    assertEmailSent(await sendWelcomeEmail(testUser), 'Welcome email');
+    console.log('Welcome email: Sent');
 
-    console.log('\n🎉 Email testing completed!');
-    console.log('Check inbox + spam folder 📩');
-
+    console.log('\nEmail testing completed. Check inbox and spam folder.');
   } catch (error) {
-    console.error('❌ Email testing failed:', error.message);
+    console.error('Email testing failed:', error.message);
 
-    console.log('\n🔧 Troubleshooting:');
-    console.log('1. Check backend/.env file');
-    console.log('2. Use Gmail App Password (NOT normal password)');
-    console.log('3. Enable 2-Step Verification');
-    console.log('4. Ensure EMAIL_USER and EMAIL_PASS are correct');
+    console.log('\nTroubleshooting:');
+    console.log('1. Check backend/.env file.');
+    console.log('2. For Gmail, use an App Password, not your normal Gmail password.');
+    console.log('3. Enable 2-Step Verification on the Gmail account.');
+    console.log('4. Ensure EMAIL_USER and EMAIL_PASS are correct.');
+    process.exitCode = 1;
   }
 }
 
-// Run test
 testEmails();

@@ -1,18 +1,28 @@
 const nodemailer = require('nodemailer');
 
+const getEmailAddress = () => process.env.EMAIL_FROM || process.env.EMAIL_USER;
+
 // Create transporter with SMTP configuration
 const createTransporter = () => {
   const user = process.env.EMAIL_USER;
   const pass = process.env.EMAIL_PASS;
 
   if (!user || !pass) {
-    throw new Error(
+    const error = new Error(
       'Missing email credentials. Set EMAIL_USER and EMAIL_PASS in backend/.env'
     );
+    console.error('❌ Email Configuration Error:', error.message);
+    throw error;
   }
 
   const port = parseInt(process.env.EMAIL_PORT, 10) || 587;
-  return nodemailer.createTransport({
+  
+  console.log('🔧 Creating email transporter...');
+  console.log('  Host:', process.env.EMAIL_HOST || 'smtp.gmail.com');
+  console.log('  Port:', port);
+  console.log('  User:', user);
+  
+  const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port,
     secure: port === 465,
@@ -21,15 +31,30 @@ const createTransporter = () => {
       pass,
     },
   });
+
+  return transporter;
+};
+
+const assertEmailSent = (result, label) => {
+  if (!result.success) {
+    throw new Error(`${label} failed: ${result.error}`);
+  }
+  return result;
 };
 
 // Send booking confirmation email
 const sendBookingConfirmation = async (bookingData) => {
   try {
+    console.log('📧 Preparing booking confirmation email for:', bookingData.email);
+    
+    if (!bookingData.email) {
+      throw new Error('Booking data missing email address');
+    }
+    
     const transporter = createTransporter();
 
     const mailOptions = {
-      from: `"FindMyStay" <${process.env.EMAIL_USER}>`,
+      from: `"FindMyStay" <${getEmailAddress()}>`,
       to: bookingData.email,
       subject: `Booking Confirmation - ${bookingData.hotelName}`,
       html: `
@@ -69,11 +94,13 @@ const sendBookingConfirmation = async (bookingData) => {
       `,
     };
 
+    console.log('✉️ Sending booking confirmation email...');
     const info = await transporter.sendMail(mailOptions);
-    console.log('Booking confirmation email sent:', info.messageId);
+    console.log('✅ Booking confirmation email sent. Message ID:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Error sending booking confirmation email:', error);
+    console.error('❌ Error sending booking confirmation email:', error.message);
+    console.error('Stack trace:', error.stack);
     return { success: false, error: error.message };
   }
 };
@@ -81,11 +108,14 @@ const sendBookingConfirmation = async (bookingData) => {
 // Send admin notification email
 const sendAdminNotification = async (bookingData) => {
   try {
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+    console.log('📧 Preparing admin notification email for:', adminEmail);
+    
     const transporter = createTransporter();
 
     const mailOptions = {
-      from: `"FindMyStay System" <${process.env.EMAIL_USER}>`,
-      to: process.env.ADMIN_EMAIL || process.env.EMAIL_USER,
+      from: `"FindMyStay System" <${getEmailAddress()}>`,
+      to: adminEmail,
       subject: `New Booking Alert - ${bookingData.hotelName}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -113,11 +143,13 @@ const sendAdminNotification = async (bookingData) => {
       `,
     };
 
+    console.log('✉️ Sending admin notification email...');
     const info = await transporter.sendMail(mailOptions);
-    console.log('Admin notification email sent:', info.messageId);
+    console.log('✅ Admin notification email sent. Message ID:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Error sending admin notification email:', error);
+    console.error('❌ Error sending admin notification email:', error.message);
+    console.error('Stack trace:', error.stack);
     return { success: false, error: error.message };
   }
 };
@@ -125,12 +157,18 @@ const sendAdminNotification = async (bookingData) => {
 // Send password reset email
 const sendPasswordResetEmail = async (email, resetToken) => {
   try {
+    console.log('📧 Preparing password reset email for:', email);
+    
+    if (!email || !resetToken) {
+      throw new Error('Missing email or reset token');
+    }
+    
     const transporter = createTransporter();
 
     const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
 
     const mailOptions = {
-      from: `"FindMyStay" <${process.env.EMAIL_USER}>`,
+      from: `"FindMyStay" <${getEmailAddress()}>`,
       to: email,
       subject: 'Password Reset Request',
       html: `
@@ -167,11 +205,13 @@ const sendPasswordResetEmail = async (email, resetToken) => {
       `,
     };
 
+    console.log('✉️ Sending password reset email...');
     const info = await transporter.sendMail(mailOptions);
-    console.log('Password reset email sent:', info.messageId);
+    console.log('✅ Password reset email sent. Message ID:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Error sending password reset email:', error);
+    console.error('❌ Error sending password reset email:', error.message);
+    console.error('Stack trace:', error.stack);
     return { success: false, error: error.message };
   }
 };
@@ -179,10 +219,16 @@ const sendPasswordResetEmail = async (email, resetToken) => {
 // Send welcome email to new users
 const sendWelcomeEmail = async (userData) => {
   try {
+    console.log('📧 Preparing welcome email for:', userData.email);
+    
+    if (!userData.email) {
+      throw new Error('User data missing email address');
+    }
+    
     const transporter = createTransporter();
 
     const mailOptions = {
-      from: `"FindMyStay" <${process.env.EMAIL_USER}>`,
+      from: `"FindMyStay" <${getEmailAddress()}>`,
       to: userData.email,
       subject: 'Welcome to FindMyStay! 🎉',
       html: `
@@ -218,17 +264,20 @@ const sendWelcomeEmail = async (userData) => {
       `,
     };
 
+    console.log('✉️ Sending welcome email...');
     const info = await transporter.sendMail(mailOptions);
-    console.log('Welcome email sent:', info.messageId);
+    console.log('✅ Welcome email sent. Message ID:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Error sending welcome email:', error);
+    console.error('❌ Error sending welcome email:', error.message);
+    console.error('Stack trace:', error.stack);
     return { success: false, error: error.message };
   }
 };
 
 module.exports = {
   createTransporter,
+  assertEmailSent,
   sendBookingConfirmation,
   sendAdminNotification,
   sendPasswordResetEmail,
