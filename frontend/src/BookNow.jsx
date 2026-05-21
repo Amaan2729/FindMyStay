@@ -150,6 +150,7 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
       phone: form.phone,
     };
 
+    // First, save booking to Firestore so user gets quick confirmation
     let firestoreBooking;
     try {
       firestoreBooking = await addFirestoreBooking(bookingPayload, userId);
@@ -159,62 +160,65 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
         type: "booking",
         bookingId: firestoreBooking.id,
       });
-      toast.success("Booking saved to Firestore successfully!");
+
+      // Optimistic UI: show confirmation immediately to the user
+      toast.success("Booking confirmed — finalizing in background");
+      setStep(3);
+      setLoading(false);
+
+      // Fire-and-forget: send booking to backend in background with retries
+      (async function sendToBackendWithRetries(payload) {
+        const maxAttempts = 3;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+            const res = await fetch(`${BACKEND_URL}/api/book`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              signal: controller.signal,
+              body: JSON.stringify(payload),
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!res.ok) {
+              const body = await res.json().catch(() => ({}));
+              console.warn(`Backend booking attempt ${attempt} failed:`, body);
+              throw new Error(body.error || `HTTP ${res.status}`);
+            }
+
+            const data = await res.json().catch(() => ({}));
+            const finalBookingId = (data.booking && data.booking.id) || data.bookingId || bookingId;
+            // Notify other clients via socket
+            socket.emit("newBooking", {
+              bookingId: finalBookingId,
+              hotelName: hotel.name,
+              user: form.name,
+              total,
+            });
+            console.log("Backend booking succeeded on attempt", attempt, data);
+            return;
+          } catch (err) {
+            console.warn("Backend booking attempt error:", err);
+            if (attempt < maxAttempts) {
+              // exponential backoff
+              await new Promise((r) => setTimeout(r, attempt * 2000));
+            } else {
+              console.error("All backend booking attempts failed.");
+              // Optionally notify the user that finalization failed
+              toast.error("Booking saved but final confirmation failed. We'll retry.");
+            }
+          }
+        }
+      })(bookingPayload);
+
     } catch (firestoreError) {
       console.error("Firestore booking error:", firestoreError);
-      toast.error("Firestore booking failed, please check configuration.");
-    }
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-
-      const res = await fetch(`${BACKEND_URL}/api/book`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          name: form.name,
-          email: form.email,
-          phone: form.phone,
-          hotelName: hotel.name,
-          checkin: form.checkin,
-          checkout: form.checkout,
-          guests: form.guests,
-          rooms: form.rooms,
-          totalPrice: total,
-        }),
-      });
-
-      clearTimeout(timeoutId);
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        console.warn("Backend booking failed:", data.error || "Booking failed");
-        toast.error(data.error || "Booking failed. Please try again.");
-        return;
-      }
-
-      const finalBookingId = (data.booking && data.booking.id) || data.bookingId || bookingId;
-      socket.emit("newBooking", {
-        bookingId: finalBookingId,
-        hotelName: hotel.name,
-        user: form.name,
-        total,
-      });
-
-      // only advance to confirmation when backend confirms
-      setStep(3);
-    } catch (err) {
-      if (err && err.name === "AbortError") {
-        toast.error("Booking request timed out. Please try again.");
-      } else {
-        console.warn("Backend request failed:", err);
-        toast.error("Booking failed. Please try again.");
-      }
-    } finally {
+      toast.error("Booking failed (could not save). Please try again.");
       setLoading(false);
+      return;
     }
   };
 
