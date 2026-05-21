@@ -166,9 +166,13 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
     }
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
       const res = await fetch(`${BACKEND_URL}/api/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           name: form.name,
           email: form.email,
@@ -182,23 +186,35 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
         }),
       });
 
-      const data = await res.json();
+      clearTimeout(timeoutId);
+
+      const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
         console.warn("Backend booking failed:", data.error || "Booking failed");
-      } else {
-        const finalBookingId = data.bookingId || bookingId;
-        socket.emit("newBooking", {
-          bookingId: finalBookingId,
-          hotelName: hotel.name,
-          user: form.name,
-          total,
-        });
+        toast.error(data.error || "Booking failed. Please try again.");
+        return;
       }
+
+      const finalBookingId = (data.booking && data.booking.id) || data.bookingId || bookingId;
+      socket.emit("newBooking", {
+        bookingId: finalBookingId,
+        hotelName: hotel.name,
+        user: form.name,
+        total,
+      });
+
+      // only advance to confirmation when backend confirms
+      setStep(3);
     } catch (err) {
-      console.warn("Backend request failed:", err);
+      if (err && err.name === "AbortError") {
+        toast.error("Booking request timed out. Please try again.");
+      } else {
+        console.warn("Backend request failed:", err);
+        toast.error("Booking failed. Please try again.");
+      }
     } finally {
       setLoading(false);
-      setStep(3);
     }
   };
 
