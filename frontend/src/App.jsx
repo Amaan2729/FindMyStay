@@ -18,6 +18,7 @@ import GrabDealPage from "./pages/GrabDealPage";
 import PlanEarly from "./pages/PlanEarly";
 import MyPlans from "./pages/MyPlans";
 import PlanDetails from "./pages/PlanDetails";
+import WeekendEscapesPage from "./pages/WeekendEscapesPage";
 import GlobalStyle from "./components/GlobalStyle";
 import NavBar from "./components/NavBar";
 import HeroSearch from "./components/HeroSearch";
@@ -36,8 +37,9 @@ const getInitialPage = () => {
   if (path.startsWith("blog")) return "blog";
   if (path.startsWith("plan-early")) return "plan-early";
   if (path.startsWith("my-plans")) return "my-plans";
+  if (path.startsWith("weekend-escapes")) return "weekend-escapes";
   if (path.startsWith("plan/")) return "plan-details";
-  const allowed = ["home", "login", "signup", "tripsquad", "about", "book", "admin", "admin-login", "grab-deal", "my-plans"];
+  const allowed = ["home", "login", "signup", "tripsquad", "about", "book", "admin", "admin-login", "grab-deal", "weekend-escapes", "my-plans"];
   return allowed.includes(path) ? path : "home";
 };
 
@@ -101,6 +103,55 @@ export default function FindMyStay() {
   const [planBookingHotel, setPlanBookingHotel] = useState(null);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const destSectionRef = useRef(null);
+
+  const handleOfferNavigation = useCallback((targetPage) => {
+    if (targetPage === "grab-deal") {
+      window.history.pushState(null, "", "/grab-deal");
+      setPage("grab-deal");
+      return;
+    }
+    if (targetPage === "plan-early") {
+      window.history.pushState(null, "", "/plan-early");
+      setPage("plan-early");
+      return;
+    }
+    if (targetPage === "weekend-escapes") {
+      window.history.pushState(null, "", "/weekend-escapes");
+      setPage("weekend-escapes");
+      return;
+    }
+    window.history.pushState(null, "", "/");
+    setPage("home");
+  }, []);
+
+  const handlePackageBooking = useCallback((pkg) => {
+    const hotel = {
+      name: pkg.title,
+      location: pkg.location,
+      price: pkg.priceNumber || Number((pkg.price || "").replace(/[^\d]/g, "")) || 0,
+      rating: pkg.rating || 4.7,
+      reviews: pkg.reviews || 1200,
+      tag: "Weekend Package",
+      tagColor: "#c96e8a",
+      img: pkg.img || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80",
+      amenities: pkg.features,
+    };
+
+    setPlanBookingHotel(hotel);
+    setPlanBookingData({
+      name: user?.displayName || user?.name || "",
+      email: user?.email || "",
+      phone: "",
+      checkin: "",
+      checkout: "",
+      guests: "2",
+      rooms: "1",
+      requests: `Weekend Escapes package: ${pkg.title}`,
+    });
+
+    setPage("book");
+    window.history.pushState(null, "", "/book");
+  }, [user]);
   
   // New state for hotel preview modal
   const [showHotelPreview, setShowHotelPreview] = useState(false);
@@ -313,7 +364,7 @@ export default function FindMyStay() {
   }
 
   // BookNow page - only show when page === "book"
-  if (page === "grab-deal" || page === "blog" || page === "plan-early" || page === "my-plans" || page === "plan-details") {
+  if (page === "grab-deal" || page === "blog" || page === "weekend-escapes" || page === "plan-early" || page === "my-plans" || page === "plan-details") {
     const pageComponent = page === "grab-deal" ? (
       <GrabDealPage
         onBack={() => setPage("home")}
@@ -332,6 +383,8 @@ export default function FindMyStay() {
         window.history.pushState(null, "", "/plan-early");
         setPage("plan-early");
       }} />
+    ) : page === "weekend-escapes" ? (
+      <WeekendEscapesPage onBack={() => setPage("home")} onPackageBook={handlePackageBooking} />
     ) : page === "plan-early" ? (
       <PlanEarly
         user={user}
@@ -507,7 +560,7 @@ export default function FindMyStay() {
         />
       )}
       
-      <OffersSection />
+      <OffersSection onNavigate={handleOfferNavigation} />
       <SquadSection setPage={setPage} />
       <WhyChooseSection />
       <SiteFooter logo={logo} onAdminAccess={() => setPage("admin-login")} />

@@ -1,10 +1,11 @@
-export default function OffersSection() {
+export default function OffersSection({ onNavigate }) {
   const offers = [
     {
       emoji: "🌙",
       title: "Last Minute Deals",
       desc: "Unlock up to 40% off on tonight's stays. Limited rooms, lightning deals.",
       cta: "Grab Deal",
+      page: "grab-deal",
       accent: "#c9a96e",
       pct: "40% OFF",
     },
@@ -13,6 +14,7 @@ export default function OffersSection() {
       title: "Early Bird Offer",
       desc: "Book 30 days in advance and save big on premium properties.",
       cta: "Plan Early",
+      page: "plan-early",
       accent: "#6ec9a9",
       pct: "25% OFF",
     },
@@ -21,6 +23,7 @@ export default function OffersSection() {
       title: "Weekend Escapes",
       desc: "Special weekend packages curated for the perfect 2-night retreat.",
       cta: "Explore",
+      page: "weekend-escapes",
       accent: "#c96e8a",
       pct: "Packages",
     },
@@ -47,7 +50,11 @@ export default function OffersSection() {
                 </div>
                 <h3 style={{ fontFamily: "'Playfair Display'", fontWeight: 700, fontSize: "20px", color: "white", marginBottom: "10px" }}>{o.title}</h3>
                 <p style={{ fontFamily: "'DM Sans'", fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 1.6, marginBottom: "20px" }}>{o.desc}</p>
-                <button style={{ fontFamily: "'DM Sans'", fontWeight: 700, fontSize: "13px", padding: "10px 24px", borderRadius: "8px", background: o.accent, color: "white", border: "none", cursor: "pointer" }}>
+                <button
+                  style={{ fontFamily: "'DM Sans'", fontWeight: 700, fontSize: "13px", padding: "10px 24px", borderRadius: "8px", background: o.accent, color: "white", border: "none", cursor: "pointer" }}
+                  onClick={() => onNavigate?.(o.page)}
+                  type="button"
+                >
                   {o.cta} →
                 </button>
               </div>
