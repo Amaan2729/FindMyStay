@@ -1,4 +1,4 @@
-﻿const nodemailer = require('nodemailer');
+﻿/*const nodemailer = require('nodemailer');
 
 const getEmailAddress = () => process.env.EMAIL_FROM || process.env.EMAIL_USER;
 
@@ -7,7 +7,38 @@ let cachedTransporter = null;
 const createTransporter = async () => {
   if (cachedTransporter) {
     return cachedTransporter;
+  }*/
+ const nodemailer = require("nodemailer");
+
+let cachedTransporter = null;
+
+const getEmailAddress = () =>
+  process.env.EMAIL_FROM || process.env.EMAIL_USER;
+
+const createTransporter = async () => {
+  if (cachedTransporter) return cachedTransporter;
+
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
+
+  if (!user || !pass) {
+    throw new Error("Missing email credentials");
   }
+
+  cachedTransporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user,
+      pass,
+    },
+  });
+
+  console.log("✅ SMTP Transporter Ready");
+
+  return cachedTransporter;
+};
 
   const user = process.env.EMAIL_USER;
   const pass = process.env.EMAIL_PASS;
