@@ -27,7 +27,7 @@ What kind of trip are you dreaming of? Tell me your budget, who you're travellin
 };
 
 // ✅ API KEY FROM ENVIRONMENT VARIABLES
-const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+const API_KEY = "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";
 const SYSTEM_PROMPT = `You are Yatra, an expert AI travel assistant for findmyStay — India's premier hotel booking platform.
 Your personality: Friendly, enthusiastic, knowledgeable, and conversational. Speak like a well-traveled friend, not a formal agent. Use emojis naturally.
 Your expertise: Indian travel destinations, hotel recommendations with prices in ₹, itinerary planning, budget breakdowns, best seasons to visit, local food and hidden gems, travel tips, group travel planning.
