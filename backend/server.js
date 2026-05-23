@@ -16,6 +16,7 @@ const authRoutes = require("./routes/auth");
 const authFirebaseRoutes = require("./routes/authFirebase");
 const bookingRoutes = require("./routes/booking");
 const emailRoutes = require("./routes/email");
+const { sendBookingConfirmation } = require("./services/emailService");
 
 const app = express();
 const httpServer = createServer(app);
@@ -35,6 +36,8 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.send("Backend working");
 });
+
+// test-mail route moved closer to server start to ensure imports/resolvers are ready
 
 // Routes
 // app.use("/api/auth", authRoutes); // Removed - using Firebase auth now
@@ -86,6 +89,34 @@ io.on("connection", (socket) => {
 
 // Database sync and start 
 const PORT = process.env.PORT || 5000;
+
+app.get("/test-mail", async (req, res) => {
+  try {
+    const result = await sendBookingConfirmation({
+      id: "TEST123",
+      name: "Shruti",
+      email: "shruti13032005@gmail.com",
+      hotelName: "Test Hotel",
+      checkin: new Date(),
+      checkout: new Date(),
+      rooms: 1,
+      totalPrice: 1000,
+    });
+
+    console.log("MAIL SENT:", result);
+
+    res.json({
+      success: true,
+    });
+  } catch (error) {
+    console.error("MAIL ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
 
 sequelize.sync({ alter: true }).then(() => {
   httpServer

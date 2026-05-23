@@ -15,14 +15,7 @@ router.post("/test", async (req, res) => {
   }
 
   try {
-    const transporter = createTransporter();
-    transporter.verify((verifyErr, success) => {
-      if (verifyErr) {
-        console.error("SMTP verification failed:", verifyErr);
-      } else {
-        console.log("SMTP transporter is ready");
-      }
-    });
+    await createTransporter();
 
     const result = await sendBookingConfirmation({
       hotelName: "FindMyStay Test Hotel",
@@ -45,9 +38,11 @@ router.post("/test", async (req, res) => {
 
 // Test admin notification email separately
 router.post("/test-admin", async (req, res) => {
-  const { email, name } = req.body;
-  if (!email) {
-    return res.status(400).json({ error: "Target admin email is required" });
+  const { name } = req.body;
+  const targetAdminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+
+  if (!targetAdminEmail) {
+    return res.status(500).json({ error: "ADMIN_EMAIL or EMAIL_USER must be configured to test admin notifications" });
   }
 
   try {
@@ -59,7 +54,7 @@ router.post("/test-admin", async (req, res) => {
       guests: 1,
       totalPrice: 1000,
       id: "TEST-ADMIN-001",
-      email: email,
+      email: targetAdminEmail,
       name: name || "Test Admin",
       phone: "0000000000",
       createdAt: new Date().toISOString(),

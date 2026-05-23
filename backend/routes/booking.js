@@ -5,7 +5,7 @@ const Booking = require("../models/Booking");
 const Hotel = require("../models/index").Hotel;
 const sequelize = require("../config/db");
 const { Op } = require("sequelize");
-const { sendBookingConfirmation, sendAdminNotification } = require("../services/emailService");
+const transporter = require("../config/email");
 
 const TOTAL_ROOMS = 10;
 
@@ -70,7 +70,7 @@ router.post("/check-availability", async (req, res) => {
 });
 
 
-// ✅ 3. BOOK API
+// ✅ 3. BOOK API - Improved error handling
 router.post("/book", async (req, res) => {
   const t = await sequelize.transaction();
 
@@ -79,6 +79,14 @@ router.post("/book", async (req, res) => {
 
     // ✅ convert to number
     const requestedRooms = parseInt(rooms);
+
+    // ✅ Validate request
+    if (!hotelName || !checkin || !checkout || !requestedRooms) {
+      await t.rollback();
+      return res.status(400).json({
+        error: "Missing required booking fields",
+      });
+    }
 
     const bookings = await Booking.findAll({
       where: {
@@ -107,67 +115,123 @@ router.post("/book", async (req, res) => {
       });
     }
 
-    const booking = await Booking.create(req.body, { transaction: t });
-
-    await t.commit();
-
-    const bookingData = {
-      ...booking.toJSON(),
+    console.log("📝 Booking payload received:", {
+      hotelName,
+      checkin,
+      checkout,
+      rooms: requestedRooms,
+      name: req.body.name,
       email: req.body.email,
-      name: req.body.name || booking.name || "Guest",
-    };
+    });
 
-    const emailResults = {
-      customer: { success: false, error: null },
-      admin: { success: false, error: null },
-    };
-
-    // Send confirmation email to customer
-    try {
-      emailResults.customer = await sendBookingConfirmation(bookingData);
-      if (!emailResults.customer.success) {
-        console.warn("Booking confirmation failed:", emailResults.customer.error);
-      }
-    } catch (emailError) {
-      emailResults.customer = { success: false, error: emailError.message };
-      console.warn("Failed to send booking confirmation email:", emailError.message);
-    }
-
-    // Send notification email to admin
-    try {
-      emailResults.admin = await sendAdminNotification(bookingData);
-      if (!emailResults.admin.success) {
-        console.warn("Admin notification failed:", emailResults.admin.error);
-      }
-    } catch (emailError) {
-      emailResults.admin = { success: false, error: emailError.message };
-      console.warn("Failed to send admin notification email:", emailError.message);
-    }
-
-    // Emit real-time notification for all connected clients
-    const io = req.app.get("io");
-    if (io) {
-      io.emit("bookingUpdate", {
-        bookingId: booking.id,
-        hotelName: booking.hotelName,
-        user: booking.name,
-        rooms: booking.rooms,
-        checkin: booking.checkin,
-        checkout: booking.checkout,
-        totalPrice: booking.totalPrice,
-        createdAt: booking.createdAt,
+    // ✅ Validate email before creating booking
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!req.body.email || !emailRegex.test(req.body.email)) {
+      await t.rollback();
+      return res.status(400).json({
+        error: "Valid email address is required",
       });
     }
 
-    res.json({
-      message: "Booking successful",
+    const booking = await Booking.create(
+      {
+        name: req.body.name,
+        email: req.body.email,
+        phone: req.body.phone,
+        hotelName: req.body.hotelName,
+        checkin: req.body.checkin,
+        checkout: req.body.checkout,
+        guests: parseInt(req.body.guests, 10) || 1,
+        rooms: parseInt(req.body.rooms, 10) || 1,
+        totalPrice: parseInt(req.body.totalPrice, 10) || 0,
+      },
+      {
+        transaction: t,
+        fields: [
+          "name",
+          "email",
+          "phone",
+          "hotelName",
+          "checkin",
+          "checkout",
+          "guests",
+          "rooms",
+          "totalPrice",
+        ],
+      }
+    );
+
+    await t.commit();
+    console.log("✅ Booking created in database with ID:", booking.id);
+
+    try {
+      console.log("Sending emails...");
+
+      // Mail to user
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: req.body.email,
+        subject: "Booking Confirmed",
+        html: `
+          <h2>Booking Confirmed</h2>
+          <p>Hotel: ${hotelName}</p>
+          <p>Name: ${req.body.name}</p>
+        `,
+      });
+
+      console.log("✅ User mail sent");
+
+      // Mail to admin
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: process.env.ADMIN_EMAIL,
+        subject: "New Booking Received",
+        html: `
+          <h2>New Booking</h2>
+          <p>User: ${req.body.name}</p>
+          <p>Hotel: ${hotelName}</p>
+        `,
+      });
+
+      console.log("✅ Admin mail sent");
+    } catch (err) {
+      console.log("❌ Mail sending failed:", err);
+    }
+
+    try {
+      const io = req.app.get("io");
+      if (io) {
+        io.emit("bookingUpdate", {
+          bookingId: booking.id,
+          hotelName: booking.hotelName,
+          user: booking.name,
+          rooms: booking.rooms,
+          checkin: booking.checkin,
+          checkout: booking.checkout,
+          totalPrice: booking.totalPrice,
+          createdAt: booking.createdAt,
+        });
+        console.log("📡 Real-time notification emitted for booking", booking.id);
+      }
+    } catch (socketErr) {
+      console.warn("⚠️ Failed to emit socket notification:", socketErr.message);
+    }
+
+    return res.status(201).json({
+      success: true,
       booking,
-      emailResults,
     });
 
   } catch (err) {
     await t.rollback();
-    res.status(500).json({ error: err.message });
+    console.error("❌ Booking route failed:", err.message);
+    console.error("Stack trace:", err.stack);
+    
+    // Return detailed error for debugging
+    res.status(500).json({
+      error: err.message || "Booking failed",
+      details: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    });
   }
 });
 

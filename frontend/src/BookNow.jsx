@@ -167,9 +167,11 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
       setStep(3);
       setLoading(false);
 
-      // Fire-and-forget: send booking to backend in background with retries
+      // Fire-and-forget: send booking to backend with persistent retry queue
       (async function sendToBackendWithRetries(payload) {
         const maxAttempts = 3;
+        let lastError = null;
+
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
           try {
             const controller = new AbortController();
@@ -199,19 +201,48 @@ export default function BookNow({ hotel = demoHotel, onBack }) {
               user: form.name,
               total,
             });
-            console.log("Backend booking succeeded on attempt", attempt, data);
+            console.log("✅ Backend booking succeeded on attempt", attempt, data);
+            
+            // Store success in localStorage to prevent duplicate sends
+            const queueKey = `booking_queue_${firestoreBooking.id}`;
+            localStorage.removeItem(queueKey);
+            
+            toast.success("Booking finalized successfully!");
             return;
           } catch (err) {
-            console.warn("Backend booking attempt error:", err);
+            lastError = err;
+            console.warn(`❌ Backend booking attempt ${attempt} error:`, err.message);
             if (attempt < maxAttempts) {
-              // exponential backoff
+              // exponential backoff: 2s, 4s delays
               await new Promise((r) => setTimeout(r, attempt * 2000));
-            } else {
-              console.error("All backend booking attempts failed.");
-              // Optionally notify the user that finalization failed
-              toast.error("Booking saved but final confirmation failed. We'll retry.");
             }
           }
+        }
+
+        // After 3 attempts fail, save to retry queue for persistent retry
+        console.error("❌ All immediate backend attempts failed. Saving to retry queue...");
+        const queueKey = `booking_queue_${firestoreBooking.id}`;
+        const retryItem = {
+          bookingId: firestoreBooking.id,
+          payload,
+          firestoreBooking,
+          lastError: lastError?.message || "Unknown error",
+          firstFailedAt: new Date().toISOString(),
+          lastAttemptAt: new Date().toISOString(),
+          attemptCount: 0,
+        };
+
+        try {
+          localStorage.setItem(queueKey, JSON.stringify(retryItem));
+          console.log("✅ Saved to persistent retry queue:", queueKey);
+          
+          // Show user-friendly message
+          toast.warning("Booking saved! Confirmation email is being sent. Check your inbox.", {
+            autoClose: false,
+          });
+        } catch (storageErr) {
+          console.error("Failed to save to retry queue:", storageErr);
+          toast.error("Booking saved but confirmation may be delayed. Please contact support.");
         }
       })(bookingPayload);
 
