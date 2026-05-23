@@ -2,156 +2,110 @@
 
 let cachedTransporter = null;
 
-const getEmailAddress = () =>
-  process.env.EMAIL_FROM || process.env.EMAIL_USER;
-
-/**
- * Create SMTP transporter (Render + Gmail safe)
- */
+// ✅ Create Transporter (SAFE FOR RENDER)
 const createTransporter = async () => {
   if (cachedTransporter) return cachedTransporter;
 
   const user = process.env.EMAIL_USER;
   const pass = process.env.EMAIL_PASS;
+  const host = process.env.EMAIL_HOST || "smtp.gmail.com";
+  const port = Number(process.env.EMAIL_PORT) || 587;
 
   if (!user || !pass) {
-    throw new Error("Missing EMAIL_USER or EMAIL_PASS in environment");
+    throw new Error("Missing EMAIL_USER or EMAIL_PASS in env");
   }
 
   cachedTransporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || "smtp.gmail.com",
-    port: parseInt(process.env.EMAIL_PORT, 10) || 587,
-    secure: false, // IMPORTANT for Render + Gmail
+    host,
+    port,
+    secure: port === 465,
     auth: {
       user,
-      pass,
+      pass, // 🔥 MUST BE Gmail App Password
     },
     tls: {
       rejectUnauthorized: false,
     },
   });
 
-  console.log("✅ SMTP Transporter Ready");
+  // ⚠️ IMPORTANT: DO NOT BLOCK APP IF VERIFY FAILS
+  try {
+    await cachedTransporter.verify();
+    console.log("✅ SMTP READY");
+  } catch (err) {
+    console.log("⚠️ SMTP verify warning (ignored):", err.message);
+  }
 
   return cachedTransporter;
 };
 
-/**
- * BOOKING CONFIRMATION EMAIL
- */
+// ==========================
+// ✅ BOOKING EMAIL
+// ==========================
 const sendBookingConfirmation = async (bookingData) => {
-  if (!bookingData?.email) {
-    throw new Error("sendBookingConfirmation requires bookingData.email");
-  }
+  try {
+    const transporter = await createTransporter();
 
-  const transporter = await createTransporter();
-
-  const mailOptions = {
-    from: `"FindMyStay" <${getEmailAddress()}>`,
-    to: bookingData.email,
-    subject: `Booking Confirmation - ${bookingData.hotelName}`,
-    html: `
-      <div style="font-family: Arial; padding: 20px;">
-        <h2>Booking Confirmed!</h2>
+    const info = await transporter.sendMail({
+      from: `"FindMyStay" <${process.env.EMAIL_USER}>`,
+      to: bookingData.email,
+      subject: `Booking Confirmation - ${bookingData.hotelName}`,
+      html: `
+        <h2>Booking Confirmed 🎉</h2>
         <p>Hi ${bookingData.name || "Guest"},</p>
 
-        <p><b>Hotel:</b> ${bookingData.hotelName}</p>
-        <p><b>Booking ID:</b> ${bookingData.id}</p>
-        <p><b>Check-in:</b> ${new Date(bookingData.checkin).toLocaleDateString()}</p>
-        <p><b>Check-out:</b> ${new Date(bookingData.checkout).toLocaleDateString()}</p>
-        <p><b>Rooms:</b> ${bookingData.rooms}</p>
-        <p><b>Total:</b> ₹${bookingData.totalPrice}</p>
+        <p>Your booking is confirmed at <b>${bookingData.hotelName}</b></p>
 
-        <br/>
-        <p>Thanks for booking with FindMyStay 🙌</p>
-      </div>
-    `,
-  };
+        <ul>
+          <li>Check-in: ${bookingData.checkin}</li>
+          <li>Check-out: ${bookingData.checkout}</li>
+          <li>Rooms: ${bookingData.rooms}</li>
+          <li>Total: ₹${bookingData.totalPrice}</li>
+        </ul>
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
+        <p>Thanks for choosing FindMyStay 🙌</p>
+      `,
+    });
+
     console.log("✅ Booking email sent:", info.messageId);
-
-    return { success: true, messageId: info.messageId };
+    return { success: true };
   } catch (err) {
-    console.error("❌ Booking email failed:", err.message);
+    console.log("❌ Booking email failed:", err.message);
     return { success: false, error: err.message };
   }
 };
 
-/**
- * ADMIN NOTIFICATION EMAIL
- */
+// ==========================
+// ✅ ADMIN EMAIL
+// ==========================
 const sendAdminNotification = async (bookingData) => {
-  const adminEmail =
-    process.env.ADMIN_NOTIFICATION_EMAIL ||
-    process.env.ADMIN_EMAIL ||
-    process.env.EMAIL_USER;
-
-  if (!adminEmail) {
-    throw new Error("Admin email not configured");
-  }
-
-  const transporter = await createTransporter();
-
-  const mailOptions = {
-    from: `"FindMyStay System" <${getEmailAddress()}>`,
-    to: adminEmail,
-    subject: `New Booking - ${bookingData.hotelName}`,
-    html: `
-      <h2>New Booking Received</h2>
-      <p><b>User:</b> ${bookingData.name}</p>
-      <p><b>Email:</b> ${bookingData.email}</p>
-      <p><b>Hotel:</b> ${bookingData.hotelName}</p>
-      <p><b>ID:</b> ${bookingData.id}</p>
-    `,
-  };
-
   try {
-    const info = await transporter.sendMail(mailOptions);
+    const transporter = await createTransporter();
+
+    const info = await transporter.sendMail({
+      from: `"FindMyStay System" <${process.env.EMAIL_USER}>`,
+      to: process.env.ADMIN_EMAIL || process.env.EMAIL_USER,
+      subject: "New Booking Received",
+      html: `
+        <h2>New Booking Alert 🚨</h2>
+        <p>Name: ${bookingData.name}</p>
+        <p>Email: ${bookingData.email}</p>
+        <p>Hotel: ${bookingData.hotelName}</p>
+        <p>Rooms: ${bookingData.rooms}</p>
+        <p>Total: ₹${bookingData.totalPrice}</p>
+      `,
+    });
+
     console.log("✅ Admin email sent:", info.messageId);
-
-    return { success: true, messageId: info.messageId };
+    return { success: true };
   } catch (err) {
-    console.error("❌ Admin email failed:", err.message);
+    console.log("❌ Admin email failed:", err.message);
     return { success: false, error: err.message };
   }
 };
 
-/**
- * WELCOME EMAIL
- */
-const sendWelcomeEmail = async (userData) => {
-  if (!userData?.email) {
-    throw new Error("sendWelcomeEmail requires userData.email");
-  }
-
-  const transporter = await createTransporter();
-
-  const mailOptions = {
-    from: `"FindMyStay" <${getEmailAddress()}>`,
-    to: userData.email,
-    subject: "Welcome to FindMyStay 🎉",
-    html: `
-      <h2>Welcome ${userData.name || "User"}!</h2>
-      <p>Thanks for joining FindMyStay.</p>
-    `,
-  };
-
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log("✅ Welcome email sent:", info.messageId);
-
-    return { success: true, messageId: info.messageId };
-  } catch (err) {
-    console.error("❌ Welcome email failed:", err.message);
-    return { success: false, error: err.message };
-  }
-};
-
+// ==========================
 module.exports = {
-  createTransporter,
   sendBookingConfirmation,
   sendAdminNotification,
-  sendWelcomeEmail,
 };

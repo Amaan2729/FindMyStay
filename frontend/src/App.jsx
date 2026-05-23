@@ -13,6 +13,8 @@ import logo from "./assets/bd.png";
 import AboutPage from "./pages/About";
 import AdminLogin from "./pages/AdminLogin";
 import AdminPage from "./pages/Admin";
+import BlogPage from "./pages/BlogPage";
+import GrabDealPage from "./pages/GrabDealPage";
 import GlobalStyle from "./components/GlobalStyle";
 import NavBar from "./components/NavBar";
 import HeroSearch from "./components/HeroSearch";
@@ -27,8 +29,9 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 const getInitialPage = () => {
   if (typeof window === "undefined") return "home";
-  const path = window.location.pathname.replace("/", "");
-  const allowed = ["home", "login", "signup", "tripsquad", "about", "book", "admin", "admin-login"];
+  const path = window.location.pathname.replace(/^\//, "");
+  if (path.startsWith("blog")) return "blog";
+  const allowed = ["home", "login", "signup", "tripsquad", "about", "book", "admin", "admin-login", "grab-deal"];
   return allowed.includes(path) ? path : "home";
 };
 
@@ -260,6 +263,36 @@ export default function FindMyStay() {
   }
 
   // BookNow page - only show when page === "book"
+  if (page === "grab-deal" || page === "blog") {
+    const pageComponent = page === "grab-deal" ? (
+      <GrabDealPage
+        onBack={() => setPage("home")}
+        onBook={(hotel) => {
+          window.history.pushState(null, "", `/hotel/${hotel.id}`);
+          setSelectedHotel(hotel);
+          setPage("book");
+        }}
+      />
+    ) : (
+      <BlogPage onBack={() => setPage("home")} />
+    );
+
+    return (
+      <AuthProvider>
+        <Router>
+          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", background: "#faf8f5", minHeight: "100vh", color: "#1a1a1a" }}>
+            <GlobalStyle />
+
+            {pageComponent}
+
+            <SiteFooter logo={logo} onAdminAccess={() => setPage("admin-login")} />
+            <TravelBot />
+          </div>
+        </Router>
+      </AuthProvider>
+    );
+  }
+
   if (page === "book") {
     return (
       <BookNow

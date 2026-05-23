@@ -13,9 +13,9 @@ export default function NavBar({
 }) {
   const navItems = [
     { label: "Explore", page: 'home' },
-    { label: "Deals", page: 'home' },
+    { label: "Deals", page: 'grab-deal' },
     { label: "About", page: 'about' },
-    { label: "Blog", page: 'home' },
+    { label: "Blog", page: 'blog' },
   ];
 
   return (
