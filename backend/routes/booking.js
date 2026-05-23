@@ -110,7 +110,19 @@ router.post("/book", async (req, res) => {
         html: `
           <h2>Booking Confirmed</h2>
           <p>Hello ${name},</p>
-          <p>Your booking at <b>${hotelName}</b> is confirmed.</p>
+          <p>Thank you for booking with FindMyStay. Your reservation details are below:</p>
+          <ul>
+            <li><strong>Hotel:</strong> ${hotelName}</li>
+            <li><strong>Check-in:</strong> ${checkin}</li>
+            <li><strong>Check-out:</strong> ${checkout}</li>
+            <li><strong>Guests:</strong> ${guests}</li>
+            <li><strong>Rooms:</strong> ${rooms}</li>
+            <li><strong>Total Price:</strong> ₹${totalPrice}</li>
+            <li><strong>Phone:</strong> ${phone}</li>
+            <li><strong>Email:</strong> ${email}</li>
+          </ul>
+          <p>If you have any questions, reply to this email or contact our support team.</p>
+          <p>We look forward to hosting you!</p>
         `,
       });
 
@@ -122,10 +134,21 @@ router.post("/book", async (req, res) => {
         to: process.env.ADMIN_NOTIFICATION_EMAIL || process.env.ADMIN_EMAIL,
         subject: "New Booking Received",
         html: `
-          <h2>New Booking</h2>
-          <p>Name: ${name}</p>
-          <p>Email: ${email}</p>
-          <p>Hotel: ${hotelName}</p>
+          <h2>New Booking Received</h2>
+          <p>A new booking has been created with these details:</p>
+          <ul>
+            <li><strong>Name:</strong> ${name}</li>
+            <li><strong>Email:</strong> ${email}</li>
+            <li><strong>Phone:</strong> ${phone}</li>
+            <li><strong>Hotel:</strong> ${hotelName}</li>
+            <li><strong>Check-in:</strong> ${checkin}</li>
+            <li><strong>Check-out:</strong> ${checkout}</li>
+            <li><strong>Guests:</strong> ${guests}</li>
+            <li><strong>Rooms:</strong> ${rooms}</li>
+            <li><strong>Total Price:</strong> ₹${totalPrice}</li>
+            <li><strong>Booking ID:</strong> ${booking.id}</li>
+          </ul>
+          <p>Please review the booking and contact the user or hotel if any details need adjustment.</p>
         `,
       });
 
