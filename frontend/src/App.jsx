@@ -15,6 +15,9 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminPage from "./pages/Admin";
 import BlogPage from "./pages/BlogPage";
 import GrabDealPage from "./pages/GrabDealPage";
+import PlanEarly from "./pages/PlanEarly";
+import MyPlans from "./pages/MyPlans";
+import PlanDetails from "./pages/PlanDetails";
 import GlobalStyle from "./components/GlobalStyle";
 import NavBar from "./components/NavBar";
 import HeroSearch from "./components/HeroSearch";
@@ -31,7 +34,10 @@ const getInitialPage = () => {
   if (typeof window === "undefined") return "home";
   const path = window.location.pathname.replace(/^\//, "");
   if (path.startsWith("blog")) return "blog";
-  const allowed = ["home", "login", "signup", "tripsquad", "about", "book", "admin", "admin-login", "grab-deal"];
+  if (path.startsWith("plan-early")) return "plan-early";
+  if (path.startsWith("my-plans")) return "my-plans";
+  if (path.startsWith("plan/")) return "plan-details";
+  const allowed = ["home", "login", "signup", "tripsquad", "about", "book", "admin", "admin-login", "grab-deal", "my-plans"];
   return allowed.includes(path) ? path : "home";
 };
 
@@ -82,10 +88,17 @@ export default function FindMyStay() {
   const [searchedQuery, setSearchedQuery] = useState("");
   const [noResult, setNoResult] = useState(false);
   const [page, setPage] = useState(getInitialPage());
+  const [selectedPlanId, setSelectedPlanId] = useState(() => {
+    if (typeof window === "undefined") return null;
+    const path = window.location.pathname.replace(/^\//, "");
+    return path.startsWith("plan/") ? path.split("/")[1] : null;
+  });
   const [user, setUser] = useState(null);
   const [admin, setAdmin] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [planBookingData, setPlanBookingData] = useState(null);
+  const [planBookingHotel, setPlanBookingHotel] = useState(null);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const destSectionRef = useRef(null);
   
@@ -184,11 +197,18 @@ export default function FindMyStay() {
   }, []);
 
   useEffect(() => {
-    const path = page === "home" ? "/" : `/${page}`;
+    let path = "/";
+    if (page === "home") {
+      path = "/";
+    } else if (page === "plan-details") {
+      path = selectedPlanId ? `/plan/${selectedPlanId}` : "/my-plans";
+    } else {
+      path = `/${page}`;
+    }
     if (window.location.pathname !== path) {
       window.history.replaceState(null, "", path);
     }
-  }, [page]);
+  }, [page, selectedPlanId]);
 
   const openBooking = useCallback((hotel) => {
     console.log("🔴 openBooking called with:", hotel.name);
@@ -244,8 +264,35 @@ export default function FindMyStay() {
   }, [searchQuery]);
 
   const filters = useMemo(() => ["All", "Hotels", "Resorts", "Motels", "Villas", "Homestays", "Hostels"], []);
-  const handleLogin = useCallback((userData) => { setUser(userData); setPage("home"); }, []);
+  const handleLogin = useCallback((userData, nextPage = "home") => { setUser(userData); setPage(nextPage); }, []);
   const handleLogout = useCallback(() => { setUser(null); setAdmin(false); setPage("home"); }, []);
+
+  const bookFromPlan = (plan, hotel) => {
+    const initialHotel = {
+      name: hotel.name,
+      location: hotel.destination || plan.destination || "India",
+      price: hotel.price,
+      rating: hotel.rating,
+      reviews: hotel.reviews,
+      tag: hotel.tag,
+      img: hotel.img,
+    };
+
+    setSelectedHotel(initialHotel);
+    setPlanBookingData({
+      name: user?.displayName || user?.name || "",
+      email: user?.email || "",
+      phone: "",
+      checkin: plan.checkIn,
+      checkout: plan.checkOut,
+      guests: String(plan.guests || 1),
+      rooms: "1",
+      requests: `Early plan booking for ${plan.travelType}`,
+    });
+    setPlanBookingHotel(initialHotel);
+    setPage("book");
+    window.history.pushState(null, "", "/book");
+  };
 
   if (page === "admin-login") return <AdminLogin onAdminLogin={() => { setAdmin(true); setPage("admin"); }} onBack={() => setPage("home")} />;
   if (page === "admin") {
@@ -253,6 +300,9 @@ export default function FindMyStay() {
       return <AdminLogin onAdminLogin={() => { setAdmin(true); setPage("admin"); }} onBack={() => setPage("home")} />;
     }
     return <AdminPage onBack={() => { setAdmin(false); setPage("home"); }} />;
+  }
+  if ((page === "plan-early" || page === "my-plans" || page === "plan-details") && !user) {
+    return <LoginPage onNavigate={setPage} onLogin={(userData) => handleLogin(userData, page)} onAdminLogin={() => { setAdmin(true); setPage("admin"); }} />;
   }
   if (page === "login") return <LoginPage onNavigate={setPage} onLogin={handleLogin} onAdminLogin={() => { setAdmin(true); setPage("admin"); }} />;
   if (page === "signup") return <SignupPage onNavigate={setPage} />;
@@ -263,7 +313,7 @@ export default function FindMyStay() {
   }
 
   // BookNow page - only show when page === "book"
-  if (page === "grab-deal" || page === "blog") {
+  if (page === "grab-deal" || page === "blog" || page === "plan-early" || page === "my-plans" || page === "plan-details") {
     const pageComponent = page === "grab-deal" ? (
       <GrabDealPage
         onBack={() => setPage("home")}
@@ -272,9 +322,55 @@ export default function FindMyStay() {
           setSelectedHotel(hotel);
           setPage("book");
         }}
+        onPlanEarly={() => {
+          window.history.pushState(null, "", "/plan-early");
+          setPage("plan-early");
+        }}
+      />
+    ) : page === "blog" ? (
+      <BlogPage onBack={() => setPage("home")} onPlanEarly={() => {
+        window.history.pushState(null, "", "/plan-early");
+        setPage("plan-early");
+      }} />
+    ) : page === "plan-early" ? (
+      <PlanEarly
+        user={user}
+        onBack={() => {
+          window.history.pushState(null, "", "/");
+          setPage("home");
+        }}
+        onSavedPlans={() => {
+          window.history.pushState(null, "", "/my-plans");
+          setPage("my-plans");
+        }}
+      />
+    ) : page === "my-plans" ? (
+      <MyPlans
+        user={user}
+        onBack={() => {
+          window.history.pushState(null, "", "/");
+          setPage("home");
+        }}
+        onViewPlan={(planId) => {
+          setSelectedPlanId(planId);
+          setPage("plan-details");
+          window.history.pushState(null, "", `/plan/${planId}`);
+        }}
+        onCreatePlan={() => {
+          window.history.pushState(null, "", "/plan-early");
+          setPage("plan-early");
+        }}
       />
     ) : (
-      <BlogPage onBack={() => setPage("home")} />
+      <PlanDetails
+        user={user}
+        planId={selectedPlanId}
+        onBack={() => {
+          window.history.pushState(null, "", "/my-plans");
+          setPage("my-plans");
+        }}
+        onBookHotel={bookFromPlan}
+      />
     );
 
     return (
@@ -296,7 +392,8 @@ export default function FindMyStay() {
   if (page === "book") {
     return (
       <BookNow
-        hotel={selectedHotel}
+        hotel={planBookingHotel || selectedHotel}
+        initialForm={planBookingData}
         onBack={({ fromStep } = {}) => {
           const currentStep = Number(fromStep) || Number(localStorage.getItem("booknow_step")) || 1;
           console.log("🔙 Back button called from BookNow, fromStep:", fromStep, "resolvedStep:", currentStep);
@@ -307,6 +404,8 @@ export default function FindMyStay() {
           console.log("🏠 Exiting booking flow to home");
           localStorage.removeItem("booknow_step");
           setSelectedHotel(null);
+          setPlanBookingData(null);
+          setPlanBookingHotel(null);
           setPage("home");
         }}
       />

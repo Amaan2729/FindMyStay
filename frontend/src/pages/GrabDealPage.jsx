@@ -189,7 +189,7 @@ function smallStars(rating) {
   );
 }
 
-export default function GrabDealPage({ onBack, onBook }) {
+export default function GrabDealPage({ onBack, onBook, onPlanEarly }) {
   const [search, setSearch] = useState("");
   const [location, setLocation] = useState("All");
   const [rating, setRating] = useState(3);
@@ -309,7 +309,16 @@ export default function GrabDealPage({ onBack, onBook }) {
                 />
                 <span style={{ minWidth: "120px", fontWeight: 700 }}>{`Up to ₹${priceRange}`}</span>
               </div>
-              <button style={pageStyles.buttonPrimary}>Search Deals</button>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+                <button style={pageStyles.buttonPrimary}>Search Deals</button>
+                <button
+                  type="button"
+                  onClick={onPlanEarly}
+                  style={{ ...pageStyles.buttonPrimary, background: "#111827", color: "white", boxShadow: "0 18px 48px rgba(17, 24, 39, 0.18)" }}
+                >
+                  Plan Early
+                </button>
+              </div>
             </div>
           </div>
 

@@ -51,22 +51,38 @@ const AMENITY_ICONS = {
 };
 
 // --- Main Component ---
-export default function BookNow({ hotel = demoHotel, onBack }) {
+export default function BookNow({ hotel = demoHotel, initialForm = null, onBack }) {
   const [step, setStep] = useState(1); // 1: form, 2: summary, 3: confirmed
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    checkin: "",
-    checkout: "",
-    guests: "1",
-    rooms: "1",
-    requests: "",
-  });
+  const [form, setForm] = useState(() => ({
+    name: initialForm?.name || "",
+    email: initialForm?.email || "",
+    phone: initialForm?.phone || "",
+    checkin: initialForm?.checkin || "",
+    checkout: initialForm?.checkout || "",
+    guests: initialForm?.guests || "1",
+    rooms: initialForm?.rooms || "1",
+    requests: initialForm?.requests || "",
+  }));
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
   const [bookedRooms, setBookedRooms] = useState(0);
+
+  useEffect(() => {
+    if (initialForm) {
+      setForm((current) => ({
+        ...current,
+        name: initialForm.name || current.name,
+        email: initialForm.email || current.email,
+        phone: initialForm.phone || current.phone,
+        checkin: initialForm.checkin || current.checkin,
+        checkout: initialForm.checkout || current.checkout,
+        guests: initialForm.guests || current.guests,
+        rooms: initialForm.rooms || current.rooms,
+        requests: initialForm.requests || current.requests,
+      }));
+    }
+  }, [initialForm]);
   const [totalRooms, setTotalRooms] = useState(10);
 
   const nights =

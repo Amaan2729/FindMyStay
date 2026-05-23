@@ -18,6 +18,10 @@ export default function NavBar({
     { label: "Blog", page: 'blog' },
   ];
 
+  if (user) {
+    navItems.splice(3, 0, { label: "Saved Plans", page: 'my-plans' });
+  }
+
   return (
     <nav
       style={{

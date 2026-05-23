@@ -217,7 +217,7 @@ function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" });
 }
 
-export default function BlogPage({ onBack }) {
+export default function BlogPage({ onBack, onPlanEarly }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [sortBy, setSortBy] = useState("latest");
@@ -371,6 +371,15 @@ export default function BlogPage({ onBack }) {
             <p style={{ marginTop: "22px", maxWidth: "620px", lineHeight: 1.8, color: "#475569" }}>
               FindMyStay brings expert hotel advice, curated destination reads, and seasonal offers in one modern blog experience.
             </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "14px", marginTop: "24px" }}>
+              <button
+                type="button"
+                onClick={onPlanEarly}
+                style={{ ...pageStyles.buttonPrimary, minWidth: "180px" }}
+              >
+                Plan Early
+              </button>
+            </div>
             <div style={pageStyles.searchBar}>
               <input
                 style={pageStyles.input}
