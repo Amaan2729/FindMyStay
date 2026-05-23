@@ -29,6 +29,9 @@ const createTransporter = async () => {
     host,
     port,
     secure,
+    pool: true,
+    logger: true,
+    debug: true,
     auth: {
       user,
       pass,
@@ -101,13 +104,18 @@ const sendBookingConfirmation = async (bookingData) => {
     `,
   };
 
-  const info = await transporter.sendMail(mailOptions);
-  console.log('✅ Booking confirmation email sent:', info.messageId);
-  return {
-    success: true,
-    messageId: info.messageId,
-    info,
-  };
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Booking confirmation email sent:', info.messageId);
+    return {
+      success: true,
+      messageId: info.messageId,
+      info,
+    };
+  } catch (err) {
+    console.error('❌ Failed to send booking confirmation:', err && err.stack ? err.stack : err);
+    return { success: false, error: err && err.message ? err.message : String(err) };
+  }
 };
 
 const sendAdminNotification = async (bookingData) => {
@@ -167,13 +175,18 @@ const sendAdminNotification = async (bookingData) => {
     `,
   };
 
-  const info = await transporter.sendMail(mailOptions);
-  console.log('✅ Admin notification email sent:', info.messageId);
-  return {
-    success: true,
-    messageId: info.messageId,
-    info,
-  };
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Admin notification email sent:', info.messageId);
+    return {
+      success: true,
+      messageId: info.messageId,
+      info,
+    };
+  } catch (err) {
+    console.error('❌ Failed to send admin notification:', err && err.stack ? err.stack : err);
+    return { success: false, error: err && err.message ? err.message : String(err) };
+  }
 };
 
 const sendWelcomeEmail = async (userData) => {
@@ -206,13 +219,18 @@ const sendWelcomeEmail = async (userData) => {
     `,
   };
 
-  const info = await transporter.sendMail(mailOptions);
-  console.log('✅ Welcome email sent:', info.messageId);
-  return {
-    success: true,
-    messageId: info.messageId,
-    info,
-  };
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Welcome email sent:', info.messageId);
+    return {
+      success: true,
+      messageId: info.messageId,
+      info,
+    };
+  } catch (err) {
+    console.error('❌ Failed to send welcome email:', err && err.stack ? err.stack : err);
+    return { success: false, error: err && err.message ? err.message : String(err) };
+  }
 };
 
 module.exports = {
