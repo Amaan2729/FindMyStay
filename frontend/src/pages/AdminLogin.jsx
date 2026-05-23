@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { signIn } from "../utils/authService";
 import { toast } from "react-toastify";
 
-export default function AdminLogin({ onBack }) {
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
+export default function AdminLogin({ onAdminLogin, onBack }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,9 +18,21 @@ export default function AdminLogin({ onBack }) {
 
     setLoading(true);
     try {
-      await signIn(email, password);
+      const response = await fetch(`${BACKEND_URL}/api/auth/admin/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Invalid credentials");
+      }
+
       toast.success("Admin login successful!");
-      navigate("/admin");
+      onAdminLogin?.({ email });
     } catch (err) {
       console.error("Admin login error", err);
       toast.error(err.message || "Invalid credentials");

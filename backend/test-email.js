@@ -12,11 +12,16 @@ if (missingEnv.length > 0) {
 }
 
 const {
-  assertEmailSent,
   sendBookingConfirmation,
   sendAdminNotification,
   sendWelcomeEmail,
 } = require('./services/emailService');
+
+const assertEmailSent = (result, name) => {
+  if (!result || result.success !== true) {
+    throw new Error(`${name} failed: ${result && result.error ? result.error : 'no result'}`);
+  }
+};
 
 async function testEmails() {
   console.log('Testing email functionality...\n');

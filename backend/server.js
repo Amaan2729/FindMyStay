@@ -16,7 +16,7 @@ const authRoutes = require("./routes/auth");
 const authFirebaseRoutes = require("./routes/authFirebase");
 const bookingRoutes = require("./routes/booking");
 const emailRoutes = require("./routes/email");
-const { sendBookingConfirmation } = require("./services/emailService");
+const { sendBookingConfirmation, createTransporter } = require("./services/emailService");
 
 const app = express();
 const httpServer = createServer(app);
@@ -40,8 +40,8 @@ app.get("/", (req, res) => {
 // test-mail route moved closer to server start to ensure imports/resolvers are ready
 
 // Routes
-// app.use("/api/auth", authRoutes); // Removed - using Firebase auth now
 app.use("/api/auth", authFirebaseRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api", bookingRoutes);
 app.use("/api/email", emailRoutes);
 
@@ -120,8 +120,13 @@ app.get("/test-mail", async (req, res) => {
 
 sequelize.sync({ alter: true }).then(() => {
   httpServer
-    .listen(PORT, () => {
+    .listen(PORT, async () => {
       console.log(`FindMyStay backend running on port ${PORT}`);
+      try {
+        await createTransporter();
+      } catch (err) {
+        console.error("❌ SMTP startup verification failed:", err.message);
+      }
     })
     .on("error", (err) => {
       if (err.code === "EADDRINUSE") {

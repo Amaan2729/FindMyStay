@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { io } from "socket.io-client";
 
 // ─── CSS (from Code 1's design system, extended for Code 2 sections) ──────────
 const CSS = `
@@ -410,7 +411,7 @@ function DonutChart() {
 
 // ─── Page: Overview (Code 1 Dashboard + Code 2 metric cards) ─────────────────
 
-function OverviewPage({ users, bookings, loading, error, setActivePage }) {
+function OverviewPage({ users, bookings, loading, error, setActivePage, activity }) {
   const [tableFilter, setTableFilter] = useState("All");
   const TABS = ["All", "Upcoming", "Active", "Completed"];
 
@@ -516,7 +517,7 @@ function OverviewPage({ users, bookings, loading, error, setActivePage }) {
         <div className="card">
           <div className="card-header"><div className="card-title">Recent Activity</div></div>
           <div className="activity-list">
-            {ACTIVITY.map((a, i) => (
+            {(activity || ACTIVITY).map((a, i) => (
               <div className="activity-item" key={i}>
                 <div className="act-dot" style={{ background: a.color }} />
                 <div className="act-text">{a.text}</div>
@@ -754,6 +755,7 @@ export default function AdminDashboard({ onBack }) {
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState("");
   const [clock, setClock]           = useState("");
+  const [liveActivity, setLiveActivity] = useState(ACTIVITY);
 
   // Live clock
   useEffect(() => {
@@ -779,7 +781,7 @@ export default function AdminDashboard({ onBack }) {
         setBookings((await bookingsRes.json()) || []);
       } catch (err) {
         console.error("Admin fetch error", err);
-        setError("Backend unavailable — showing static demo data.");
+        setError("Backend unavailable — showing static admin data.");
       } finally {
         setLoading(false);
       }
@@ -787,12 +789,60 @@ export default function AdminDashboard({ onBack }) {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const socket = io(BACKEND_URL);
+
+    socket.on("connect", () => {
+      console.log("Admin socket connected:", socket.id);
+    });
+
+    socket.on("bookingUpdate", (bookingData) => {
+      console.log("Admin live booking update", bookingData);
+      if (!bookingData) return;
+
+      setBookings((current) => {
+        const bookingId = bookingData.bookingId || bookingData.id;
+        const exists = current.some((b) => String(b.id) === String(bookingId));
+        if (exists) return current;
+        return [
+          {
+            id: bookingId,
+            name: bookingData.user || bookingData.name || "Guest",
+            email: bookingData.email || "",
+            hotelName: bookingData.hotelName || "Unknown",
+            checkin: bookingData.checkin,
+            checkout: bookingData.checkout,
+            rooms: bookingData.rooms || 1,
+            guests: bookingData.guests || 1,
+            totalPrice: bookingData.total || bookingData.totalPrice || 0,
+          },
+          ...current,
+        ];
+      });
+
+      setLiveActivity((prev) => [
+        {
+          color: "#3B6D11",
+          text: `Live booking: ${bookingData.user || bookingData.name || "Guest"} booked ${bookingData.rooms || 1} room(s) at ${bookingData.hotelName || "Unknown"}`,
+          time: "just now",
+        },
+        ...prev.slice(0, 7),
+      ]);
+    });
+
+    return () => {
+      socket.off("connect");
+      socket.off("bookingUpdate");
+      socket.disconnect();
+    };
+  }, []);
+
   const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   const renderPage = () => {
     switch (activePage) {
       case "Overview":
-        return <OverviewPage users={users} bookings={bookings} loading={loading} error={error} setActivePage={setActivePage} />;
+        return <OverviewPage users={users} bookings={bookings} loading={loading} error={error} setActivePage={setActivePage} activity={liveActivity} />;
       case "Bookings":
         return <BookingsPage bookings={bookings} loading={loading} error={error} />;
       case "Users":

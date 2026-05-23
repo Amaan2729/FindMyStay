@@ -115,9 +115,9 @@ const sendAdminNotification = async (bookingData) => {
     throw new Error('sendAdminNotification requires bookingData');
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
   if (!adminEmail) {
-    throw new Error('Missing ADMIN_EMAIL or EMAIL_USER in .env');
+    throw new Error('Missing ADMIN_NOTIFICATION_EMAIL, ADMIN_EMAIL, or EMAIL_USER in .env');
   }
 
   const transporter = await createTransporter();
