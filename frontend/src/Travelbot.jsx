@@ -27,8 +27,7 @@ What kind of trip are you dreaming of? Tell me your budget, who you're travellin
 };
 
 // ✅ PASTE YOUR GEMINI API KEY HERE
-const API_KEY = "AIzaSyAEnovqqpbCYIJAC-i99zvEZiS3BZwCGOA";
-
+const API_KEY ="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";
 const SYSTEM_PROMPT = `You are Yatra, an expert AI travel assistant for findmyStay — India's premier hotel booking platform.
 Your personality: Friendly, enthusiastic, knowledgeable, and conversational. Speak like a well-traveled friend, not a formal agent. Use emojis naturally.
 Your expertise: Indian travel destinations, hotel recommendations with prices in ₹, itinerary planning, budget breakdowns, best seasons to visit, local food and hidden gems, travel tips, group travel planning.
@@ -96,30 +95,38 @@ export default function TravelBot() {
     setLoading(true);
 
     try {
-      // Build Gemini conversation history (skip the welcome message)
+      // Build Groq conversation history (skip the welcome message)
       const history = updatedMessages
         .slice(1) // skip welcome msg
         .slice(0, -1) // skip last user msg (sent separately)
         .map((m) => ({
-          role: m.role === "assistant" ? "model" : "user",
-          parts: [{ text: m.content }],
+          role: m.role === "assistant" ? "assistant" : "user",
+          content: m.content,
         }));
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
+        "https://api.groq.com/openai/v1/chat/completions",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${API_KEY}`,
+          },
           body: JSON.stringify({
-            system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-            contents: [
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              {
+                role: "system",
+                content: SYSTEM_PROMPT,
+              },
               ...history,
-              { role: "user", parts: [{ text: userText }] },
+              {
+                role: "user",
+                content: userText,
+              },
             ],
-            generationConfig: {
-              maxOutputTokens: 1000,
-              temperature: 0.7,
-            },
+            temperature: 0.7,
+            max_tokens: 1000,
           }),
         },
       );
@@ -128,12 +135,12 @@ export default function TravelBot() {
 
       if (!response.ok) {
         const errMsg = data?.error?.message || `API Error ${response.status}`;
-        console.error("Gemini Error:", data);
+        console.error("Groq Error:", data);
         throw new Error(errMsg);
       }
 
       const reply =
-        data.candidates?.[0]?.content?.parts?.[0]?.text ||
+        data.choices?.[0]?.message?.content ||
         "Sorry, I couldn't get a response. Please try again!";
 
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
