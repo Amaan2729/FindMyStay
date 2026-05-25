@@ -83,19 +83,32 @@ router.post("/book", async (req, res) => {
       guests,
       rooms,
       totalPrice,
+        paymentMethod,
+        paymentStatus,
+        transactionId,
     } = req.body;
+      // Ensure payment fields have sensible defaults
+      const pm = paymentMethod || "card";
+      const ps = paymentStatus || (pm === "payAtHotel" ? "Pending" : "Paid");
+      let tx = transactionId || null;
+      if (ps === "Paid" && !tx) {
+        tx = "TXN" + Math.floor(Math.random() * 1000000);
+      }
 
-    const booking = await Booking.create({
-      name,
-      email,
-      phone,
-      hotelName,
-      checkin,
-      checkout,
-      guests,
-      rooms,
-      totalPrice,
-    });
+      const booking = await Booking.create({
+        name,
+        email,
+        phone,
+        hotelName,
+        checkin,
+        checkout,
+        guests,
+        rooms,
+        totalPrice,
+        paymentMethod: pm,
+        paymentStatus: ps,
+        transactionId: tx,
+      });
 
     console.log("✅ Booking saved");
 
@@ -120,6 +133,9 @@ router.post("/book", async (req, res) => {
             <li><strong>Total Price:</strong> ₹${totalPrice}</li>
             <li><strong>Phone:</strong> ${phone}</li>
             <li><strong>Email:</strong> ${email}</li>
+            <li><strong>Payment Method:</strong> ${pm}</li>
+            <li><strong>Payment Status:</strong> ${ps}</li>
+            ${tx ? `<li><strong>Transaction ID:</strong> ${tx}</li>` : ""}
           </ul>
           <p>If you have any questions, reply to this email or contact our support team.</p>
           <p>We look forward to hosting you!</p>
@@ -147,6 +163,9 @@ router.post("/book", async (req, res) => {
             <li><strong>Rooms:</strong> ${rooms}</li>
             <li><strong>Total Price:</strong> ₹${totalPrice}</li>
             <li><strong>Booking ID:</strong> ${booking.id}</li>
+            <li><strong>Payment Method:</strong> ${pm}</li>
+            <li><strong>Payment Status:</strong> ${ps}</li>
+            ${tx ? `<li><strong>Transaction ID:</strong> ${tx}</li>` : ""}
           </ul>
           <p>Please review the booking and contact the user or hotel if any details need adjustment.</p>
         `,

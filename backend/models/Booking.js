@@ -11,6 +11,13 @@ const Booking = sequelize.define("Booking", {
   guests: DataTypes.INTEGER,
   rooms: DataTypes.INTEGER,
   totalPrice: DataTypes.INTEGER
+  ,
+  paymentMethod: DataTypes.STRING,
+  paymentStatus: {
+    type: DataTypes.STRING,
+    defaultValue: "Pending",
+  },
+  transactionId: DataTypes.STRING
 });
 
 module.exports = Booking;

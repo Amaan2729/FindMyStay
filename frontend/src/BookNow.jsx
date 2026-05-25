@@ -3,6 +3,7 @@ import { io } from "socket.io-client";
 import { addBooking as addFirestoreBooking, addNotification as addFirestoreNotification } from "./services/firestoreService";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import PaymentStepper from "./components/PaymentStepper.jsx";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 const socket = io(BACKEND_URL); // Socket connection
@@ -85,6 +86,14 @@ export default function BookNow({ hotel = demoHotel, initialForm = null, onBack 
   }, [initialForm]);
   const [totalRooms, setTotalRooms] = useState(10);
 
+  // Payment states for fake/mock payment flow
+  const [paymentMethod, setPaymentMethod] = useState("card");
+  const [upiId, setUpiId] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardHolder, setCardHolder] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+
   const nights =
     form.checkin && form.checkout
       ? Math.max(
@@ -154,6 +163,37 @@ export default function BookNow({ hotel = demoHotel, initialForm = null, onBack 
     setLoading(true);
 
     const userId = form.email.trim().toLowerCase() || "guest";
+    // Determine fake payment outcome
+    const simulatePayment = () => {
+      if (paymentMethod === "payAtHotel") {
+        return { paymentStatus: "Pending", transactionId: null };
+      }
+
+      // simple validation for demo
+      if (paymentMethod === "upi") {
+        if (!upiId || !upiId.includes("@")) throw new Error("Enter valid UPI ID");
+      }
+
+      if (paymentMethod === "card") {
+        if (!cardNumber || cardNumber.replace(/\s+/g, "").length < 12) throw new Error("Enter valid card number");
+        if (!cardHolder) throw new Error("Enter card holder name");
+        if (!cardExpiry) throw new Error("Enter expiry");
+        if (!cardCvv || cardCvv.length < 3) throw new Error("Enter CVV");
+      }
+
+      // For mock/demo we treat UPI/Card/NetBanking as paid
+      return { paymentStatus: "Paid", transactionId: "TXN" + Math.floor(Math.random() * 1000000) };
+    };
+
+    let paymentResult;
+    try {
+      paymentResult = simulatePayment();
+    } catch (err) {
+      toast.error(err.message || "Payment validation failed");
+      setLoading(false);
+      return;
+    }
+
     const bookingPayload = {
       hotelId: hotel.id || hotel.name,
       hotelName: hotel.name,
@@ -165,7 +205,15 @@ export default function BookNow({ hotel = demoHotel, initialForm = null, onBack 
       totalPrice: total,
       email: form.email,
       phone: form.phone,
+      paymentMethod,
+      paymentStatus: paymentResult.paymentStatus,
+      transactionId: paymentResult.transactionId,
     };
+
+    // Save last transaction id locally for display (mock)
+    if (paymentResult.transactionId) {
+      try { localStorage.setItem('lastTxn', paymentResult.transactionId); } catch (e) {}
+    }
 
     // First, save booking to Firestore so user gets quick confirmation
     let firestoreBooking;
@@ -957,30 +1005,16 @@ export default function BookNow({ hotel = demoHotel, initialForm = null, onBack 
           )}
           <span className="bn-topbar-title">FindMyStay</span>
 
-          <div className="bn-steps">
-            {[
-              { num: 1, label: "Details" },
-              { num: 2, label: "Review" },
-              { num: 3, label: "Confirmed" },
-            ].map((s, i) => (
-              <React.Fragment key={s.num}>
-                <div
-                  className={`bn-step ${
-                    step === s.num
-                      ? "active"
-                      : step > s.num
-                      ? "done"
-                      : ""
-                  }`}
-                >
-                  <div className="bn-step-num">
-                    {step > s.num ? "✓" : s.num}
-                  </div>
-                  {s.label}
-                </div>
-                {i < 2 && <div className="bn-step-sep" />}
-              </React.Fragment>
-            ))}
+          <div style={{ marginLeft: 'auto', width: '60%' }}>
+            <PaymentStepper
+              steps={[
+                { title: 'Method', value: paymentMethod },
+                { title: 'Status', value: paymentMethod === 'payAtHotel' ? 'Pending' : 'Paid' },
+                { title: 'Review', value: `${form.rooms} room(s) • ₹${total}` },
+                { title: 'Confirmed', value: localStorage.getItem('lastTxn') || '—' },
+              ]}
+              active={step === 1 ? 1 : step === 2 ? 3 : 4}
+            />
           </div>
         </div>
 
@@ -1312,11 +1346,79 @@ export default function BookNow({ hotel = demoHotel, initialForm = null, onBack 
                     </span>
                   </div>
 
+                  {/* Payment Options (Fake / Mock) */}
+                  <div style={{ marginTop: "18px", marginBottom: "12px" }}>
+                    <div className="bn-section-label" style={{ margin: 0 }}>Payment Method</div>
+                    <div style={{ display: "flex", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
+                      {[
+                        { v: "upi", label: "UPI" },
+                        { v: "card", label: "Card" },
+                        { v: "netbanking", label: "Net Banking" },
+                        /* Cash on Delivery removed */
+                        { v: "payAtHotel", label: "Pay at Hotel" },
+                      ].map((opt) => (
+                        <label key={opt.v} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <input
+                            type="radio"
+                            name="payment"
+                            value={opt.v}
+                            checked={paymentMethod === opt.v}
+                            onChange={() => setPaymentMethod(opt.v)}
+                          />
+                          <span style={{ fontSize: 13 }}>{opt.label}</span>
+                        </label>
+                      ))}
+                    </div>
+
+                    {/* Conditional payment forms */}
+                    <div style={{ marginTop: 12 }}>
+                      {paymentMethod === "upi" && (
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input
+                            className="bn-input"
+                            placeholder="Enter UPI ID (e.g. yourname@bank)"
+                            value={upiId}
+                            onChange={(e) => setUpiId(e.target.value)}
+                          />
+                        </div>
+                      )}
+
+                      {paymentMethod === "card" && (
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                          <input
+                            className="bn-input"
+                            placeholder="Card Number"
+                            value={cardNumber}
+                            onChange={(e) => setCardNumber(e.target.value.replace(/[^0-9\s]/g, ""))}
+                          />
+                          <input
+                            className="bn-input"
+                            placeholder="Card Holder Name"
+                            value={cardHolder}
+                            onChange={(e) => setCardHolder(e.target.value)}
+                          />
+                          <input
+                            className="bn-input"
+                            placeholder="MM/YY"
+                            value={cardExpiry}
+                            onChange={(e) => setCardExpiry(e.target.value)}
+                          />
+                          <input
+                            className="bn-input"
+                            placeholder="CVV"
+                            value={cardCvv}
+                            onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <button
                     className="bn-cta confirm"
                     onClick={handleConfirm}
                     disabled={loading}
-                    style={{ marginTop: "24px" }}
+                    style={{ marginTop: "6px" }}
                   >
                     {loading ? (
                       <>

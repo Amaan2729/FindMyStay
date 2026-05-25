@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Accent tokens */
+:root {
+  --fms-gold: #D4AF37;
+}
+
+/* Small helper for non-tailwind fallback */
+.stepper-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

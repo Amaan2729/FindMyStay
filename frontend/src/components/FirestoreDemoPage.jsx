@@ -311,8 +311,14 @@ function FirestoreDemoPage() {
                 <p>👥 Guests: {booking.guests}</p>
                 <p>🛏️ Rooms: {booking.rooms}</p>
                 <p style={{ fontSize: "18px", fontWeight: "bold" }}>💰 ₹{booking.totalPrice}</p>
-                <p style={{ color: booking.status === "confirmed" ? "#4caf50" : "#ff9800", fontWeight: "bold" }}>
-                  Status: {booking.status.toUpperCase()}
+                <p style={{ color: (booking.paymentStatus || booking.status) === "confirmed" ? "#4caf50" : "#ff9800", fontWeight: "bold" }}>
+                  Status: {(booking.paymentStatus || booking.status || "pending").toString().toUpperCase()}
+                </p>
+                <p style={{ margin: "6px 0" }}>
+                  <strong>Payment:</strong> {booking.paymentMethod || "—"}
+                </p>
+                <p style={{ margin: "6px 0", fontSize: 13 }}>
+                  <strong>Txn ID:</strong> {booking.transactionId || "—"}
                 </p>
               </div>
             ))}
