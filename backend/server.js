@@ -118,23 +118,30 @@ app.get("/test-mail", async (req, res) => {
   }
 });
 
-sequelize.sync({ alter: true }).then(() => {
-  httpServer
-    .listen(PORT, async () => {
+
+const startServer = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log("Database connected successfully");
+
+    // Create missing tables without altering existing tables
+    await sequelize.sync();
+
+    httpServer.listen(PORT, () => {
       console.log(`FindMyStay backend running on port ${PORT}`);
-      try {
-        await createTransporter();
-      } catch (err) {
-        console.error("❌ SMTP startup verification failed:", err.message);
-      }
-    })
-    .on("error", (err) => {
-      if (err.code === "EADDRINUSE") {
-        console.error(`Port ${PORT} is already in use. Stop the process using that port or set PORT to a free port before retrying.`);
-      } else {
-        console.error("Server error:", err);
-      }
-      process.exit(1);
+
+      Promise.resolve()
+        .then(() => createTransporter())
+        .catch((err) => {
+          console.error("SMTP verification failed:", err.message);
+        });
     });
-});
-// testing commit
+
+  } catch (error) {
+    console.error("Backend startup failed:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
+
