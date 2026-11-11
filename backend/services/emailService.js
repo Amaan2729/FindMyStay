@@ -106,6 +106,7 @@ const sendAdminNotification = async (bookingData) => {
 
 // ==========================
 module.exports = {
+  createTransporter,
   sendBookingConfirmation,
   sendAdminNotification,
 };
